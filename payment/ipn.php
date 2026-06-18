@@ -108,8 +108,6 @@ if ($status === 'VALID' || $status === 'VALIDATED') {
             "UPDATE {$targetTable} SET payment_status = 'paid', val_id = ?, paid_at = NOW() WHERE tran_id = ?"
         )->execute([$valId, $tranId]);
         
-        sync_json_status($tranId, 'paid', $type);
-        
         // Fetch group title
         $teeTitle = 'TBA';
         if ($type === 'golfer') {
@@ -150,7 +148,6 @@ if ($status === 'VALID' || $status === 'VALIDATED') {
     
     try {
         $pdo->prepare("UPDATE {$targetTable} SET payment_status = 'failed' WHERE tran_id = ?")->execute([$tranId]);
-        sync_json_status($tranId, 'failed', $type);
         http_response_code(200);
         exit('IPN fail processed');
     } catch (Throwable $e) {
@@ -163,7 +160,6 @@ if ($status === 'VALID' || $status === 'VALIDATED') {
     
     try {
         $pdo->prepare("UPDATE {$targetTable} SET payment_status = 'cancelled' WHERE tran_id = ?")->execute([$tranId]);
-        sync_json_status($tranId, 'cancelled', $type);
         http_response_code(200);
         exit('IPN cancel processed');
     } catch (Throwable $e) {
@@ -176,34 +172,3 @@ if ($status === 'VALID' || $status === 'VALIDATED') {
 
 http_response_code(200);
 exit('IPN status ignored');
-
-/**
- * Synchronize local JSON backup status
- */
-function sync_json_status(string $tranId, string $status, string $regType) {
-    $file = dirname(__DIR__) . '/data/' . ($regType === 'golfer' ? 'registrations.json' : 'registrations_non_golfer.json');
-    if (!is_readable($file)) {
-        return;
-    }
-    
-    $data = json_decode(file_get_contents($file) ?: '[]', true);
-    if (!is_array($data)) {
-        return;
-    }
-    
-    foreach ($data as &$record) {
-        if (($record['tran_id'] ?? '') === $tranId) {
-            $record['payment_status'] = $status;
-            if ($status === 'paid') {
-                $record['paid_at'] = date('Y-m-d H:i:s');
-            }
-            break;
-        }
-    }
-    unset($record);
-    
-    $enc = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    if ($enc) {
-        file_put_contents($file, $enc, LOCK_EX);
-    }
-}

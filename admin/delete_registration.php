@@ -44,31 +44,7 @@ try {
     error_log('[delete_registration.php] DB delete failed: ' . $e->getMessage());
 }
 
-// Sync delete locally in JSON backups
-$jsonFile = dirname(__DIR__) . '/data/' . ($regType === 'non_golfer' ? 'registrations_non_golfer.json' : 'registrations.json');
-$jsonSyncDeleted = false;
-
-if (is_writable($jsonFile)) {
-    $data = json_decode(file_get_contents($jsonFile) ?: '[]', true);
-    if (is_array($data)) {
-        $filtered = [];
-        foreach ($data as $item) {
-            $itemId = $item['unique_id'] ?? $item['uniqueId'] ?? '';
-            if ($itemId !== $uniqueId) {
-                $filtered[] = $item;
-            } else {
-                $jsonSyncDeleted = true;
-            }
-        }
-        
-        $enc = json_encode($filtered, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-        if ($enc) {
-            file_put_contents($jsonFile, $enc, LOCK_EX);
-        }
-    }
-}
-
-if ($dbDeleted || $jsonSyncDeleted) {
+if ($dbDeleted) {
     echo json_encode(['ok' => true, 'message' => 'Registration deleted successfully.']);
 } else {
     echo json_encode(['ok' => false, 'message' => 'Record not found or could not be deleted.']);

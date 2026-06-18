@@ -77,7 +77,6 @@ function rowMatchesFilters(array $r, string $statusFilter, string $typeFilter, s
 }
 
 $registrations = [];
-$dataSource = 'mysql';
 $scheduleLabels = [];
 
 try {
@@ -156,96 +155,12 @@ try {
     $registrations = array_merge($g, $ng);
     usort($registrations, static fn($a, $b) => strcmp((string)($b['submitted_at'] ?? ''), (string)($a['submitted_at'] ?? '')));
 } catch (Throwable $e) {
-    error_log('[admin] MySQL retrieval failed, loading from JSON backup: ' . $e->getMessage());
-    $dataSource = 'json';
-    
-    // Load from JSON fallbacks
-    $f1 = dirname(__DIR__) . '/data/registrations.json';
-    if (is_readable($f1)) {
-        $d = json_decode(file_get_contents($f1) ?: '[]', true) ?: [];
-        foreach (array_reverse($d) as $i => $r) {
-            $registrations[] = [
-                'id' => $i + 1,
-                'tournament_id' => $r['tournament_id'] ?? $selectedTournamentId,
-                'unique_id' => $r['unique_id'] ?? '',
-                'tran_id' => $r['tran_id'] ?? '',
-                'full_name' => $r['full_name'] ?? '',
-                'designation' => $r['designation'] ?? '',
-                'organization' => $r['organization'] ?? '',
-                'nationality' => $r['nationality'] ?? '',
-                'gender' => $r['gender'] ?? '',
-                'contact' => $r['contact'] ?? '',
-                'email' => $r['email'] ?? '',
-                'mailing_address' => $r['mailing_address'] ?? '',
-                'handicap' => $r['handicap'] ?? '',
-                'tshirt_size' => $r['tshirt_size'] ?? '',
-                'home_club' => $r['home_club'] ?? '',
-                'schedule_group' => $r['schedule_group'] ?? '',
-                'player_category' => $r['player_category'] ?? '',
-                'reference_name' => $r['reference_name'] ?? '',
-                'reference_mission' => $r['reference_mission'] ?? '',
-                'reference_contact' => $r['reference_contact'] ?? '',
-                'payment_status' => $r['payment_status'] ?? 'pending',
-                'amount' => $r['amount'] ?? '',
-                'currency' => $r['currency'] ?? 'BDT',
-                'val_id' => $r['val_id'] ?? '',
-                'ssl_session_key' => $r['ssl_session_key'] ?? '',
-                'submitted_at' => $r['submitted_at'] ?? '',
-                'paid_at' => $r['paid_at'] ?? '',
-                'registration_type' => 'golfer',
-                'putting_contest_interest' => '',
-                'profile_photo' => $r['profile_photo'] ?? '',
-                'name_on_polo' => $r['name_on_polo'] ?? '',
-                'golf_set_brand' => $r['golf_set_brand'] ?? ''
-            ];
-        }
-    }
-    
-    $f2 = dirname(__DIR__) . '/data/registrations_non_golfer.json';
-    if (is_readable($f2)) {
-        $d = json_decode(file_get_contents($f2) ?: '[]', true) ?: [];
-        foreach (array_reverse($d) as $i => $r) {
-            $registrations[] = [
-                'id' => $i + 1,
-                'tournament_id' => $r['tournament_id'] ?? $selectedTournamentId,
-                'unique_id' => $r['unique_id'] ?? '',
-                'tran_id' => $r['tran_id'] ?? '',
-                'full_name' => $r['full_name'] ?? '',
-                'designation' => $r['designation'] ?? '',
-                'organization' => $r['organization'] ?? '',
-                'nationality' => $r['nationality'] ?? '',
-                'gender' => $r['gender'] ?? '',
-                'contact' => $r['contact'] ?? '',
-                'email' => $r['email'] ?? '',
-                'mailing_address' => $r['mailing_address'] ?? '',
-                'handicap' => '',
-                'tshirt_size' => $r['tshirt_size'] ?? '',
-                'home_club' => '',
-                'schedule_group' => $r['arrival_window'] ?? '',
-                'player_category' => $r['player_category'] ?? '',
-                'reference_name' => $r['reference_name'] ?? '',
-                'reference_mission' => $r['reference_mission'] ?? '',
-                'reference_contact' => $r['reference_contact'] ?? '',
-                'payment_status' => $r['payment_status'] ?? 'pending',
-                'amount' => $r['amount'] ?? '',
-                'currency' => $r['currency'] ?? 'BDT',
-                'val_id' => $r['val_id'] ?? '',
-                'ssl_session_key' => $r['ssl_session_key'] ?? '',
-                'submitted_at' => $r['submitted_at'] ?? '',
-                'paid_at' => $r['paid_at'] ?? '',
-                'registration_type' => 'non_golfer',
-                'putting_contest_interest' => $r['putting_contest_interest'] ?? '',
-                'profile_photo' => $r['profile_photo'] ?? '',
-                'name_on_polo' => $r['name_on_polo'] ?? '',
-                'golf_set_brand' => ''
-            ];
-        }
-    }
+    error_log('[admin] MySQL retrieval failed: ' . $e->getMessage());
 }
 
 // Handle exports
 $exportType = (string)($_GET['export'] ?? '');
-if ($exportType === 'csv' || $exportType === 'xls') {
+if ($exportType === 'csv') {
     $statusFilter = strtolower(trim((string)($_GET['status'] ?? '')));
     $typeFilter = strtolower(trim((string)($_GET['type'] ?? '')));
     $searchFilter = strtolower(trim((string)($_GET['search'] ?? '')));
@@ -263,33 +178,15 @@ if ($exportType === 'csv' || $exportType === 'xls') {
     $headers = exportHeaders();
     $stamp = date('Ymd_His');
     
-    if ($exportType === 'csv') {
-        header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename="registrations_' . $stamp . '.csv"');
-        $out = fopen('php://output', 'w');
-        if ($out === false) exit;
-        fputcsv($out, $headers);
-        foreach ($filtered as $i => $r) {
-            fputcsv($out, exportRow($r, $i + 1, $scheduleLabels));
-        }
-        fclose($out);
-        exit;
-    }
-    
-    // Export XLS
-    header('Content-Type: application/vnd.ms-excel; charset=utf-8');
-    header('Content-Disposition: attachment; filename="registrations_' . $stamp . '.xls"');
-    echo "<table border='1'><tr>";
-    foreach ($headers as $h) echo '<th>' . esc($h) . '</th>';
-    echo '</tr>';
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="registrations_' . $stamp . '.csv"');
+    $out = fopen('php://output', 'w');
+    if ($out === false) exit;
+    fputcsv($out, $headers);
     foreach ($filtered as $i => $r) {
-        echo '<tr>';
-        foreach (exportRow($r, $i + 1, $scheduleLabels) as $c) {
-            echo '<td>' . esc($c) . '</td>';
-        }
-        echo '</tr>';
+        fputcsv($out, exportRow($r, $i + 1, $scheduleLabels));
     }
-    echo '</table>';
+    fclose($out);
     exit;
 }
 
@@ -324,14 +221,6 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
       gap: 0.75rem;
       border-bottom: 4px solid #c9a84c;
     }
-    .source-badge {
-      font-size: 0.72rem;
-      padding: 0.25rem 0.6rem;
-      border-radius: 999px;
-      font-weight: 600;
-    }
-    .source-mysql { background: #d1fae5; color: #065f46; }
-    .source-json { background: #fef3c7; color: #92400e; }
     .table-card {
       background: #fff;
       border-radius: 0.85rem;
@@ -401,6 +290,32 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
       background: #0d3840;
       color: #fff;
     }
+    #photoLightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: rgba(0, 0, 0, 0.85);
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      cursor: zoom-out;
+    }
+    #photoLightbox.is-open { display: flex; }
+    #photoLightbox img {
+      max-width: min(90vw, 900px);
+      max-height: 90vh;
+      object-fit: contain;
+      border-radius: 0.5rem;
+      box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.4);
+      cursor: default;
+    }
+    #photoLightbox .photo-lightbox-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      z-index: 1;
+    }
   </style>
 </head>
 <body>
@@ -408,9 +323,6 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
 <div class="page-header">
   <div class="d-flex align-items-center gap-2">
     <h5 class="mb-0 fw-bold"><i class="bi bi-clipboard2-data me-2 text-warning"></i><?= htmlspecialchars(EVENT_NAME, ENT_QUOTES, 'UTF-8') ?> Portal</h5>
-    <span class="source-badge <?= $dataSource === 'mysql' ? 'source-mysql' : 'source-json' ?>">
-      <?= $dataSource === 'mysql' ? 'Database Connected' : 'JSON Fallback Mode' ?>
-    </span>
   </div>
   <div class="d-flex gap-2 flex-wrap">
     <a href="tournaments.php" class="btn btn-sm btn-outline-light"><i class="bi bi-trophy me-1"></i>Tournaments</a>
@@ -476,7 +388,6 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
         <option value="golfer">Golfer</option>
         <option value="non_golfer">Non-Golfer</option>
       </select>
-      <a href="view_registration.php?export=xls&tournament_id=<?= $selectedTournamentId ?>" class="btn btn-sm btn-outline-success" id="exportXlsBtn"><i class="bi bi-file-earmark-excel me-1"></i>Export XLS</a>
       <a href="view_registration.php?export=csv&tournament_id=<?= $selectedTournamentId ?>" class="btn btn-sm btn-outline-primary" id="exportCsvBtn"><i class="bi bi-filetype-csv me-1"></i>Export CSV</a>
       
       <span class="text-muted ms-auto fw-semibold" id="rowCount"></span>
@@ -530,6 +441,12 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
       </table>
     </div>
   </div>
+</div>
+
+<!-- Full-size profile photo lightbox (above Bootstrap modals) -->
+<div id="photoLightbox" role="dialog" aria-modal="true" aria-label="Profile photo preview">
+  <button type="button" class="btn-close btn-close-white photo-lightbox-close" aria-label="Close"></button>
+  <img id="photoLightboxImg" src="" alt="Profile photo">
 </div>
 
 <!-- Details Modal -->
@@ -636,13 +553,58 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
     if (q) qs.set('search', q);
     
     const suffix = '&' + qs.toString();
-    $('#exportXlsBtn').attr('href', 'view_registration.php?export=xls' + suffix);
     $('#exportCsvBtn').attr('href', 'view_registration.php?export=csv' + suffix);
   }
 
   $('#searchInput, #statusFilter, #typeFilter').on('input change', function () {
     applyFilters();
     updateExportLinks();
+  });
+
+  const $photoLightbox = $('#photoLightbox');
+  const $photoLightboxImg = $('#photoLightboxImg');
+
+  function openPhotoLightbox(src) {
+    if ($photoLightbox.hasClass('is-open')) return;
+    $photoLightboxImg.attr('src', src);
+    $photoLightbox.addClass('is-open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closePhotoLightbox() {
+    $photoLightbox.removeClass('is-open');
+    $photoLightboxImg.attr('src', '');
+    if (!document.querySelector('.modal.show')) {
+      document.body.style.overflow = '';
+    }
+  }
+
+  $('#modalBody').on('click', '.profile-photo-thumb', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    openPhotoLightbox($(this).data('full'));
+  });
+
+  $photoLightbox.on('click', function (e) {
+    if (e.target === this || $(e.target).hasClass('photo-lightbox-close')) {
+      closePhotoLightbox();
+    }
+  });
+
+  $photoLightboxImg.on('click', function (e) {
+    e.stopPropagation();
+  });
+
+  $(document).on('keydown', function (e) {
+    if (e.key === 'Escape' && $photoLightbox.hasClass('is-open')) {
+      e.stopPropagation();
+      closePhotoLightbox();
+    }
+  });
+
+  document.getElementById('detailModal').addEventListener('hidden.bs.modal', function () {
+    closePhotoLightbox();
+    resetDeleteBtn();
   });
 
   $('#regBody').on('click', 'tr', function () {
@@ -667,7 +629,7 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
       : '';
 
     const photoHtml = d.profile_photo 
-      ? '<div class="text-center mb-4"><img src="../' + d.profile_photo + '" class="img-thumbnail rounded-circle shadow-sm" style="width: 120px; height: 120px; object-fit: cover;" alt="Profile Picture"></div>'
+      ? '<div class="text-center mb-4"><img src="../' + d.profile_photo + '" class="img-thumbnail rounded-circle shadow-sm profile-photo-thumb" style="width: 120px; height: 120px; object-fit: cover; cursor: zoom-in;" alt="Profile Picture" title="Click to view full size" data-full="../' + d.profile_photo + '"></div>'
       : '';
 
     $('#modalTitle').text((d.full_name || 'Registration') + ' (' + typeLabel + ')');
@@ -707,7 +669,6 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
     });
   });
 
-  document.getElementById('detailModal').addEventListener('hidden.bs.modal', resetDeleteBtn);
   applyFilters();
   updateExportLinks();
 })();

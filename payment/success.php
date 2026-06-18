@@ -85,7 +85,6 @@ try {
         
         // Mark failed in DB
         $pdo->prepare("UPDATE {$targetTable} SET payment_status = 'failed' WHERE tran_id = ?")->execute([$tranId]);
-        sync_json_status($tranId, 'failed', $type);
         
         header('Location: ' . APP_BASE_URL . '/payment/fail.php?reason=validation_failed');
         exit;
@@ -101,8 +100,6 @@ try {
     $pdo->prepare(
         "UPDATE {$targetTable} SET payment_status = 'paid', val_id = ?, paid_at = NOW() WHERE tran_id = ?"
     )->execute([$valId, $tranId]);
-    
-    sync_json_status($tranId, 'paid', $type);
 } catch (Throwable $e) {
     error_log('[payment/success.php] DB update to paid failed: ' . $e->getMessage());
 }
@@ -146,34 +143,3 @@ SMSGateway::send(
 // Redirect to public success receipt page
 header('Location: ' . APP_BASE_URL . '/success.php?uid=' . urlencode($registration['unique_id']));
 exit;
-
-/**
- * Synchronize local JSON backup status
- */
-function sync_json_status(string $tranId, string $status, string $regType) {
-    $file = dirname(__DIR__) . '/data/' . ($regType === 'golfer' ? 'registrations.json' : 'registrations_non_golfer.json');
-    if (!is_readable($file)) {
-        return;
-    }
-    
-    $data = json_decode(file_get_contents($file) ?: '[]', true);
-    if (!is_array($data)) {
-        return;
-    }
-    
-    foreach ($data as &$record) {
-        if (($record['tran_id'] ?? '') === $tranId) {
-            $record['payment_status'] = $status;
-            if ($status === 'paid') {
-                $record['paid_at'] = date('Y-m-d H:i:s');
-            }
-            break;
-        }
-    }
-    unset($record);
-    
-    $enc = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    if ($enc) {
-        file_put_contents($file, $enc, LOCK_EX);
-    }
-}

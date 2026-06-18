@@ -43,13 +43,12 @@ worldCorporateTour/
 │   ├── index.php           # Admin portal login interface
 │   ├── admin_authenticate.php # Auth session initiator
 │   ├── admin_logout.php    # Session destroyer
-│   ├── view_registration.php # Registrations table (filters, details view, export to CSV/Excel)
+│   ├── view_registration.php # Registrations table (filters, details view, CSV export)
 │   ├── settings.php        # Admin settings manager (caps total slot threshold)
 │   ├── tee_time_settings.php # Golfer shotgun group interval editor
 │   ├── non_golfer_window_settings.php # Non-golfer arrival window slot editor
 │   ├── delete_registration.php # Soft/hard record delete handler
 │   └── send_sms.php        # Manual SMS confirmation dispatch controller
-└── data/                   # Dynamic backup directory for registrations dual-write backups
 ```
 
 ---

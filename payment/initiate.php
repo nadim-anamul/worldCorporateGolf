@@ -28,6 +28,48 @@ function xss($value): string {
 }
 
 /**
+ * Applies JPEG EXIF orientation so phone photos display upright after GD processing.
+ */
+function applyExifOrientation(\GdImage $image, string $srcPath): \GdImage {
+    if (!function_exists('exif_read_data')) {
+        return $image;
+    }
+
+    $exif = @exif_read_data($srcPath);
+    if (!is_array($exif) || empty($exif['Orientation'])) {
+        return $image;
+    }
+
+    switch ((int)$exif['Orientation']) {
+        case 2:
+            imageflip($image, IMG_FLIP_HORIZONTAL);
+            break;
+        case 3:
+            $image = imagerotate($image, 180, 0);
+            break;
+        case 4:
+            imageflip($image, IMG_FLIP_VERTICAL);
+            break;
+        case 5:
+            $image = imagerotate($image, -90, 0);
+            imageflip($image, IMG_FLIP_HORIZONTAL);
+            break;
+        case 6:
+            $image = imagerotate($image, -90, 0);
+            break;
+        case 7:
+            $image = imagerotate($image, 90, 0);
+            imageflip($image, IMG_FLIP_HORIZONTAL);
+            break;
+        case 8:
+            $image = imagerotate($image, 90, 0);
+            break;
+    }
+
+    return $image;
+}
+
+/**
  * Optimizes an uploaded image to a web-safe JPEG with a max dimension of 600px.
  * Falls back to direct copy if GD is unavailable or fails.
  */
@@ -70,6 +112,10 @@ function optimizeProfilePhoto(array $file, string $targetPath): bool {
     
     if (!$srcImg) {
         return move_uploaded_file($srcPath, $targetPath);
+    }
+
+    if ($mime === 'image/jpeg' || $mime === 'image/jpg') {
+        $srcImg = applyExifOrientation($srcImg, $srcPath);
     }
     
     $origWidth = imagesx($srcImg);
@@ -203,10 +249,8 @@ if ($file['size'] > 5 * 1024 * 1024) {
 }
 
 // Connect & check capacity & duplicates
-$dbOk = false;
 try {
     $pdo = db();
-    $dbOk = true;
 
     if ($regType === 'golfer') {
         // Check Golfer capacity
@@ -262,6 +306,7 @@ try {
     }
 } catch (Throwable $e) {
     error_log('[initiate.php] DB Capacity/Dup Check Failed: ' . $e->getMessage());
+    bail('Could not verify registration availability. Please try again.');
 }
 
 // Generate IDs
@@ -285,71 +330,31 @@ if (!optimizeProfilePhoto($file, $targetPath)) {
 }
 
 // MySQL persistence
-if ($dbOk) {
-    try {
-        if ($regType === 'golfer') {
-            $stmt = $pdo->prepare(
-                'INSERT INTO registrations 
-                   (tournament_id, unique_id, tran_id, full_name, designation, organization, nationality, gender, profile_photo, name_on_polo, golf_set_brand, contact, email, mailing_address, handicap, tshirt_size, home_club, schedule_group, player_category, reference_name, reference_mission, reference_contact, payment_status, amount, currency, submitted_at) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-            );
-            $stmt->execute([
-                ACTIVE_TOURNAMENT_ID, $uniqueId, $tranId, $fullName, $designation, $organization, $nationality, null, $relativeWebPath, $nameOnPolo, $golfSetBrand, $contact, $email, $mailingAddress, $handicap, $tshirtSize, null, $scheduleGroup, $playerCategory,
-                $referenceName ?: null, $referenceMission ?: null, $referenceContact ?: null, 'pending', $amount, $currency, $now
-            ]);
-        } else {
-            $stmt = $pdo->prepare(
-                'INSERT INTO registrations_non_golfer 
-                   (tournament_id, unique_id, tran_id, full_name, designation, organization, nationality, gender, profile_photo, name_on_polo, contact, email, mailing_address, tshirt_size, arrival_window, putting_contest_interest, player_category, reference_name, reference_mission, reference_contact, payment_status, amount, currency, submitted_at) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-            );
-            $stmt->execute([
-                ACTIVE_TOURNAMENT_ID, $uniqueId, $tranId, $fullName, $designation, $organization, $nationality, null, $relativeWebPath, $nameOnPolo, $contact, $email, $mailingAddress, $tshirtSize, $scheduleGroup, $puttingContest, $playerCategory,
-                $referenceName ?: null, $referenceMission ?: null, $referenceContact ?: null, 'pending', $amount, $currency, $now
-            ]);
-        }
-    } catch (Throwable $e) {
-        error_log('[initiate.php] DB Insert pending registration failed: ' . $e->getMessage());
-        bail('Could not save registration details. Please try again.');
-    }
-}
-
-// Local JSON backup dual-write
-$jsonFile = dirname(__DIR__) . '/data/' . ($regType === 'golfer' ? 'registrations.json' : 'registrations_non_golfer.json');
-if (is_writable(dirname($jsonFile))) {
-    if (!file_exists($jsonFile)) {
-        file_put_contents($jsonFile, '[]', LOCK_EX);
-    }
-    $all = json_decode(file_get_contents($jsonFile) ?: '[]', true) ?: [];
-    
-    $record = [
-        'unique_id' => $uniqueId,
-        'tran_id' => $tranId,
-        'full_name' => $fullName,
-        'email' => $email,
-        'contact' => $contact,
-        'payment_status' => 'pending',
-        'registration_type' => $regType,
-        'submitted_at' => $now,
-        'amount' => $amount,
-        'currency' => $currency,
-        'profile_photo' => $relativeWebPath,
-        'name_on_polo' => $nameOnPolo
-    ];
+try {
     if ($regType === 'golfer') {
-        $record['schedule_group'] = $scheduleGroup;
-        $record['handicap'] = $handicap;
-        $record['golf_set_brand'] = $golfSetBrand;
+        $stmt = $pdo->prepare(
+            'INSERT INTO registrations 
+               (tournament_id, unique_id, tran_id, full_name, designation, organization, nationality, gender, profile_photo, name_on_polo, golf_set_brand, contact, email, mailing_address, handicap, tshirt_size, home_club, schedule_group, player_category, reference_name, reference_mission, reference_contact, payment_status, amount, currency, submitted_at) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        );
+        $stmt->execute([
+            ACTIVE_TOURNAMENT_ID, $uniqueId, $tranId, $fullName, $designation, $organization, $nationality, null, $relativeWebPath, $nameOnPolo, $golfSetBrand, $contact, $email, $mailingAddress, $handicap, $tshirtSize, null, $scheduleGroup, $playerCategory,
+            $referenceName ?: null, $referenceMission ?: null, $referenceContact ?: null, 'pending', $amount, $currency, $now
+        ]);
     } else {
-        $record['arrival_window'] = $scheduleGroup;
-        $record['putting_contest_interest'] = $puttingContest;
+        $stmt = $pdo->prepare(
+            'INSERT INTO registrations_non_golfer 
+               (tournament_id, unique_id, tran_id, full_name, designation, organization, nationality, gender, profile_photo, name_on_polo, contact, email, mailing_address, tshirt_size, arrival_window, putting_contest_interest, player_category, reference_name, reference_mission, reference_contact, payment_status, amount, currency, submitted_at) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        );
+        $stmt->execute([
+            ACTIVE_TOURNAMENT_ID, $uniqueId, $tranId, $fullName, $designation, $organization, $nationality, null, $relativeWebPath, $nameOnPolo, $contact, $email, $mailingAddress, $tshirtSize, $scheduleGroup, $puttingContest, $playerCategory,
+            $referenceName ?: null, $referenceMission ?: null, $referenceContact ?: null, 'pending', $amount, $currency, $now
+        ]);
     }
-    
-    $all[] = $record;
-    $enc = json_encode($all, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    if ($enc) {
-        file_put_contents($jsonFile, $enc, LOCK_EX);
-    }
+} catch (Throwable $e) {
+    error_log('[initiate.php] DB Insert pending registration failed: ' . $e->getMessage());
+    bail('Could not save registration details. Please try again.');
 }
 
 // Session state

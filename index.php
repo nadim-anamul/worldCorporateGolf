@@ -467,10 +467,10 @@ require_once __DIR__ . '/config/config.php';
          style="background:var(--green-light); border:1px solid #9dc4cb; border-radius:.75rem;">
       <i class="bi bi-cup-hot-fill fs-4 mt-1 flex-shrink-0" style="color:var(--green-mid);"></i>
       <div>
-        <strong class="section-title" style="border-left:none; padding-left:0; font-size:1.05rem;">Lunch &amp; Prize Giving Ceremony</strong>
+        <strong class="section-title" style="border-left:none; padding-left:0; font-size:1.05rem;">Dinner &amp; Prize Giving Ceremony</strong>
         <div class="d-flex flex-column flex-sm-row flex-wrap gap-sm-3 mt-1" style="font-size:.92rem;">
-          <div><i class="bi bi-clock" style="color:var(--green-mid);"></i>&nbsp; Time: <strong>12:30 PM – 3:00 PM</strong></div>
-          <div><i class="bi bi-geo-alt" style="color:var(--green-mid);"></i>&nbsp; Venue: <strong>The Banquet Hall, <?= htmlspecialchars(str_replace(', Dhaka', '', EVENT_VENUE), ENT_QUOTES, 'UTF-8') ?></strong></div>
+          <div><i class="bi bi-clock" style="color:var(--green-mid);"></i>&nbsp; Time: <strong>7:30 PM - 10:00 PM</strong></div>
+          <div><i class="bi bi-geo-alt" style="color:var(--green-mid);"></i>&nbsp; Venue: <strong>Crowne Plaza Dhaka Airport</strong></div>
         </div>
       </div>
     </div>
@@ -494,7 +494,7 @@ require_once __DIR__ . '/config/config.php';
       <div class="col-md-6">
         <h2 class="section-title"><i class="bi bi-card-checklist"></i>&nbsp; Rules &amp; Guidelines</h2>
         <ul class="rules-list ps-3">
-          <li>Open to diplomatic community, foreign professionals, and distinguished invited guests.</li>
+          <li>Open to executive community, foreign professionals, and distinguished invited guests.</li>
           <li>Dress code: Proper golf attire required.</li>
           <li>Participants must bring their own clubs and gear.</li>
           <li>Arrive at least 30 minutes before tee time.</li>
@@ -505,7 +505,7 @@ require_once __DIR__ . '/config/config.php';
           <li>All participant contributions are strictly non-refundable under any circumstances.</li>
         </ul>
         <p class="text-muted" style="font-size:.8rem;">
-          * Organizers reserve the right to amend rules prior to or during the event.
+          * Organizers reserve the right to amend rules and dates prior to or during the event.
         </p>
       </div>
 
