@@ -1,26 +1,12 @@
 <?php
-/**
- * Admin Non-Golfer Arrival Window Settings
- */
 
 declare(strict_types=1);
 
-session_start();
-
-if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
-    header('Location: ./index.php');
-    exit;
-}
-
-require_once dirname(__DIR__) . '/config/config.php';
-require_once dirname(__DIR__) . '/config/db.php';
+require_once dirname(__DIR__) . '/src/bootstrap.php';
+requireAdminAuth();
 
 $errors = [];
 $success = '';
-
-function esc(mixed $v): string {
-    return htmlspecialchars((string)$v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-}
 
 try {
     $pdo = db();
@@ -44,7 +30,10 @@ if ($selectedTournamentId <= 0) {
     $selectedTournamentId = (int)ACTIVE_TOURNAMENT_ID;
 }
 
+$adminCsrf = ensureCsrfToken();
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireAdminPostCsrf();
     $action = (string)($_POST['action'] ?? '');
     
     if ($action === 'create') {
@@ -243,6 +232,7 @@ try {
       <div class="panel-card">
         <h5 class="fw-bold mb-3" id="formHeader">Create Arrival Window</h5>
         <form id="windowForm" method="POST">
+          <input type="hidden" name="csrf_token" value="<?= esc($adminCsrf) ?>" />
           <input type="hidden" name="action" id="actionField" value="create" />
 
           <div class="mb-2" id="idFieldContainer">
@@ -329,6 +319,7 @@ try {
                           Edit
                         </button>
                         <form method="POST" class="d-inline">
+                          <input type="hidden" name="csrf_token" value="<?= esc($adminCsrf) ?>" />
                           <input type="hidden" name="action" value="toggle" />
                           <input type="hidden" name="id" value="<?= esc($opt['id']) ?>" />
                           <button type="submit" class="btn btn-xs btn-outline-warning">
@@ -336,6 +327,7 @@ try {
                           </button>
                         </form>
                         <form method="POST" class="d-inline" onsubmit="return confirm('Delete this window option?');">
+                          <input type="hidden" name="csrf_token" value="<?= esc($adminCsrf) ?>" />
                           <input type="hidden" name="action" value="delete" />
                           <input type="hidden" name="id" value="<?= esc($opt['id']) ?>" />
                           <button type="submit" class="btn btn-xs btn-outline-danger">

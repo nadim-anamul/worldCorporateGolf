@@ -1,16 +1,12 @@
 <?php
-/**
- * SSLCommerz Instant Payment Notification (IPN) Handler
- * Processes payments asynchronously in the background.
- */
 
 declare(strict_types=1);
 
-require_once dirname(__DIR__) . '/config/config.php';
-require_once dirname(__DIR__) . '/config/db.php';
-require_once dirname(__DIR__) . '/src/Database.php';
+require_once dirname(__DIR__) . '/src/bootstrap.php';
 require_once dirname(__DIR__) . '/src/SSLCommerz.php';
-require_once dirname(__DIR__) . '/src/SMSGateway.php';
+require_once dirname(__DIR__) . '/src/RegistrationRepository.php';
+require_once dirname(__DIR__) . '/src/ScheduleService.php';
+require_once dirname(__DIR__) . '/src/PaymentCompletionService.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -18,156 +14,84 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $tranId = trim((string)($_POST['tran_id'] ?? ''));
-$valId  = trim((string)($_POST['val_id']  ?? ''));
-$status = strtoupper(trim((string)($_POST['status']  ?? '')));
+$valId  = trim((string)($_POST['val_id'] ?? ''));
+$status = strtoupper(trim((string)($_POST['status'] ?? '')));
 
 if ($tranId === '' || $valId === '') {
-    error_log('[payment/ipn.php] Missing tran_id or val_id in IPN POST.');
+    appLog('[payment/ipn.php] Missing tran_id or val_id');
     http_response_code(400);
     exit('Bad Request');
 }
 
-// 1. Verify md5 hash signature of IPN data
 try {
     $sslCommerz = new SSLCommerz();
-    $validHash = $sslCommerz->validateIpnHash($_POST);
-    
-    if (!$validHash) {
-        error_log('[payment/ipn.php] Hash signature check failed for transaction: ' . $tranId);
+    if (!$sslCommerz->validateIpnHash($_POST)) {
+        appLog('[payment/ipn.php] Invalid hash', ['tran_id' => $tranId]);
         http_response_code(400);
         exit('Invalid Hash Signature');
     }
 } catch (Throwable $e) {
-    error_log('[payment/ipn.php] Hash signature exception: ' . $e->getMessage());
+    appLog('[payment/ipn.php] Hash exception', ['error' => $e->getMessage()]);
     http_response_code(500);
     exit('Internal Server Error');
 }
 
-// 2. Fetch record from MySQL
-$registration = null;
-$type = ''; // golfer or non_golfer
-$targetTable = 'registrations';
-
-try {
-    $pdo = db();
-    
-    // Check golfer
-    $stmt = $pdo->prepare('SELECT * FROM registrations WHERE tran_id = ? LIMIT 1');
-    $stmt->execute([$tranId]);
-    $row = $stmt->fetch();
-    
-    if ($row) {
-        $registration = $row;
-        $type = 'golfer';
-        $targetTable = 'registrations';
-    } else {
-        // Check non-golfer
-        $stmt2 = $pdo->prepare('SELECT * FROM registrations_non_golfer WHERE tran_id = ? LIMIT 1');
-        $stmt2->execute([$tranId]);
-        $row2 = $stmt2->fetch();
-        if ($row2) {
-            $registration = $row2;
-            $type = 'non_golfer';
-            $targetTable = 'registrations_non_golfer';
-        }
-    }
-} catch (Throwable $e) {
-    error_log('[payment/ipn.php] DB lookup exception: ' . $e->getMessage());
-    http_response_code(500);
-    exit('Database Error');
-}
+$pdo = db();
+$repo = new RegistrationRepository($pdo);
+$registration = $repo->findByTranId($tranId);
 
 if (!$registration) {
-    error_log('[payment/ipn.php] Registration record not found for transaction: ' . $tranId);
+    appLog('[payment/ipn.php] Record not found', ['tran_id' => $tranId]);
     http_response_code(404);
     exit('Record Not Found');
 }
 
-// Already processed, no action needed
 if ($registration['payment_status'] === 'paid') {
     http_response_code(200);
     exit('IPN processed previously');
 }
 
-// 3. Process according to status
+$type = (string)$registration['registration_type'];
+
 if ($status === 'VALID' || $status === 'VALIDATED') {
-    
-    // Confirm amount matches to avoid tampering
     $expectedAmount = (float)$registration['amount'];
     $returnedAmount = (float)(($_POST['currency'] ?? 'BDT') === 'BDT' ? ($_POST['amount'] ?? 0) : ($_POST['currency_amount'] ?? 0));
-    
+
     if (abs($returnedAmount - $expectedAmount) >= 1) {
-        error_log('[payment/ipn.php] Amount mismatch. Expected ' . $expectedAmount . ', got ' . $returnedAmount);
+        appLog('[payment/ipn.php] Amount mismatch', ['tran_id' => $tranId, 'expected' => $expectedAmount, 'got' => $returnedAmount]);
         http_response_code(400);
         exit('Amount Mismatch');
     }
-    
-    // Mark transaction as paid
+
     try {
-        $pdo->prepare(
-            "UPDATE {$targetTable} SET payment_status = 'paid', val_id = ?, paid_at = NOW() WHERE tran_id = ?"
-        )->execute([$valId, $tranId]);
-        
-        // Fetch group title
-        $teeTitle = 'TBA';
-        if ($type === 'golfer') {
-            $teeStmt = $pdo->prepare('SELECT title FROM tee_time_options WHERE id = ?');
-            $teeStmt->execute([(int)$registration['schedule_group']]);
-            $r = $teeStmt->fetch();
-            if ($r) $teeTitle = $r['title'];
-        } else {
-            $winStmt = $pdo->prepare('SELECT title FROM tee_time_options WHERE id = ?');
-            $winStmt->execute([(int)$registration['arrival_window']]);
-            $r = $winStmt->fetch();
-            if ($r) {
-                $teeTitle = $r['title'];
-            } else {
-                $winStmt = $pdo->prepare('SELECT title FROM arrival_window_options_non_golfer WHERE id = ?');
-                $winStmt->execute([(int)$registration['arrival_window']]);
-                $r = $winStmt->fetch();
-                if ($r) $teeTitle = $r['title'];
-            }
+        $ssl = new SSLCommerz();
+        if (!$ssl->validatePayment($valId, $tranId, $expectedAmount, (string)$registration['currency'])) {
+            $repo->updatePaymentStatus($type, $tranId, 'failed');
+            http_response_code(400);
+            exit('Payment Validation Failed');
         }
-        
-        // Send SMS confirmation
-        SMSGateway::send(
-            $registration['contact'],
-            $registration['full_name'],
-            $teeTitle
-        );
-        
+
+        $completion = new PaymentCompletionService($pdo, $repo, new ScheduleService($pdo));
+        $completion->markPaidAndNotify($tranId, $valId, false);
         http_response_code(200);
         exit('IPN success processed');
     } catch (Throwable $e) {
-        error_log('[payment/ipn.php] DB Update to paid failed: ' . $e->getMessage());
+        appLog('[payment/ipn.php] Paid update failed', ['error' => $e->getMessage(), 'tran_id' => $tranId]);
         http_response_code(500);
         exit('DB Update Failed');
     }
-    
-} elseif ($status === 'FAILED') {
-    
-    try {
-        $pdo->prepare("UPDATE {$targetTable} SET payment_status = 'failed' WHERE tran_id = ?")->execute([$tranId]);
-        http_response_code(200);
-        exit('IPN fail processed');
-    } catch (Throwable $e) {
-        error_log('[payment/ipn.php] DB update to failed failed: ' . $e->getMessage());
-        http_response_code(500);
-        exit('DB update failed');
-    }
-    
-} elseif ($status === 'CANCELLED') {
-    
-    try {
-        $pdo->prepare("UPDATE {$targetTable} SET payment_status = 'cancelled' WHERE tran_id = ?")->execute([$tranId]);
-        http_response_code(200);
-        exit('IPN cancel processed');
-    } catch (Throwable $e) {
-        error_log('[payment/ipn.php] DB update to cancelled failed: ' . $e->getMessage());
-        http_response_code(500);
-        exit('DB update failed');
-    }
-    
+}
+
+if ($status === 'FAILED') {
+    $repo->updatePaymentStatus($type, $tranId, 'failed');
+    http_response_code(200);
+    exit('IPN fail processed');
+}
+
+if ($status === 'CANCELLED') {
+    $repo->updatePaymentStatus($type, $tranId, 'cancelled');
+    http_response_code(200);
+    exit('IPN cancel processed');
 }
 
 http_response_code(200);

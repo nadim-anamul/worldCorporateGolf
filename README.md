@@ -31,7 +31,8 @@ worldCorporateTour/
 ├── assets/
 │   ├── css/
 │   │   └── style.css       # Layout rules, green & gold theme variables, glassmorphic styles
-│   ├── js/                 # Form validators and AJAX interaction logic
+│   ├── js/
+│   │   └── registration.js # Shared registration form submit logic
 │   └── images/             # Sponsor logos, landing headers, favicon
 ├── payment/
 │   ├── initiate.php        # JSON controller verifying slots & starting gateway session
@@ -47,8 +48,12 @@ worldCorporateTour/
 │   ├── settings.php        # Admin settings manager (caps total slot threshold)
 │   ├── tee_time_settings.php # Golfer shotgun group interval editor
 │   ├── non_golfer_window_settings.php # Non-golfer arrival window slot editor
-│   ├── delete_registration.php # Soft/hard record delete handler
-│   └── send_sms.php        # Manual SMS confirmation dispatch controller
+│   ├── delete_registration.php # Record delete handler
+│   └── send_sms.php        # Manual SMS dispatch
+├── src/                    # Shared services (Schedule, Registration, Payment, SMS)
+├── scripts/
+│   ├── migrate.php         # Database migration runner
+│   └── test_services.php   # Service smoke tests
 ```
 
 ---
@@ -65,15 +70,24 @@ DB_USER=root
 DB_PASS=
 
 # SSL Commerz Credentials
-SSL_STORE_ID=worldcorporategolftour0live
-SSL_STORE_PASSWORD=69E8A1414082960696
-SSL_IS_SANDBOX=false
+SSL_STORE_ID=your_store_id
+SSL_STORE_PASSWORD=your_store_password
+SSL_IS_SANDBOX=true
 ```
 
 ### 2. SQL Setup
 1. Log into your database tool (e.g. phpMyAdmin / cPanel MySQL).
 2. Choose your database `wcc`.
-3. Open the **SQL Query Console** and import the contents of [schema.sql](file:///Users/nadim/Downloads/worldCorporateTour/config/schema.sql) to initialize tables and initial slots.
+3. Import [schema.sql](config/schema.sql) for a fresh install.
+4. Run migrations on existing databases: `php scripts/migrate.php`
+
+### 3. Deployment Checklist
+- Copy `.env.example` to `.env` and set strong `ADMIN_PASS`, SSLCommerz, and SMS credentials
+- Ensure `uploads/profile_pics/` is writable by the web server
+- Run `php scripts/migrate.php` after pulling schema changes
+- Run `php scripts/test_services.php` to smoke-test core services
+- Set `SSL_IS_SANDBOX=false` only in production with valid SSLCommerz live credentials
+- Block direct web access to `.env`, `config/`, and `src/` (included in `.htaccess`)
 
 ---
 

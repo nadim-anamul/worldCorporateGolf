@@ -1,19 +1,12 @@
 <?php
-/**
- * Admin Action Handler: Delete Registration Record
- */
 
 declare(strict_types=1);
 
-session_start();
+require_once dirname(__DIR__) . '/src/bootstrap.php';
+require_once dirname(__DIR__) . '/src/RegistrationRepository.php';
 
 header('Content-Type: application/json; charset=utf-8');
-
-if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
-    http_response_code(403);
-    echo json_encode(['ok' => false, 'message' => 'Forbidden']);
-    exit;
-}
+requireAdminAuth();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -21,8 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-require_once dirname(__DIR__) . '/config/config.php';
-require_once dirname(__DIR__) . '/config/db.php';
+requireAdminPostCsrf();
 
 $uniqueId = trim((string)($_POST['unique_id'] ?? ''));
 $regType = trim((string)($_POST['registration_type'] ?? 'golfer'));
@@ -32,21 +24,16 @@ if ($uniqueId === '') {
     exit;
 }
 
-$dbDeleted = false;
-$targetTable = ($regType === 'non_golfer') ? 'registrations_non_golfer' : 'registrations';
-
 try {
-    $pdo = db();
-    $stmt = $pdo->prepare("DELETE FROM {$targetTable} WHERE unique_id = ?");
-    $stmt->execute([$uniqueId]);
-    $dbDeleted = ($stmt->rowCount() > 0);
+    $repo = new RegistrationRepository(db());
+    $deleted = $repo->deleteByUniqueId($regType, $uniqueId);
+    if ($deleted) {
+        echo json_encode(['ok' => true, 'message' => 'Registration deleted successfully.']);
+    } else {
+        echo json_encode(['ok' => false, 'message' => 'Record not found or could not be deleted.']);
+    }
 } catch (Throwable $e) {
-    error_log('[delete_registration.php] DB delete failed: ' . $e->getMessage());
-}
-
-if ($dbDeleted) {
-    echo json_encode(['ok' => true, 'message' => 'Registration deleted successfully.']);
-} else {
-    echo json_encode(['ok' => false, 'message' => 'Record not found or could not be deleted.']);
+    appLog('[delete_registration.php] failed', ['error' => $e->getMessage(), 'unique_id' => $uniqueId]);
+    echo json_encode(['ok' => false, 'message' => 'Could not delete record.']);
 }
 exit;

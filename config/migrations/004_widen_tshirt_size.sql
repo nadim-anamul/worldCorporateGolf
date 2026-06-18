@@ -1,0 +1,2 @@
+ALTER TABLE registrations MODIFY COLUMN tshirt_size VARCHAR(50) DEFAULT NULL;
+ALTER TABLE registrations_non_golfer MODIFY COLUMN tshirt_size VARCHAR(50) DEFAULT NULL;

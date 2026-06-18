@@ -27,6 +27,7 @@ $username = trim((string)($_POST['username'] ?? ''));
 $password = (string)($_POST['password'] ?? '');
 
 if ($username === ADMIN_USER && $password === ADMIN_PASS) {
+    session_regenerate_id(true);
     $_SESSION['admin_logged_in'] = true;
     unset($_SESSION['csrf_token']);
     header('Location: ./view_registration.php');

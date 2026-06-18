@@ -1,33 +1,12 @@
 <?php
-/**
- * Admin Registrations Dashboard
- */
 
 declare(strict_types=1);
 
-session_start();
+require_once dirname(__DIR__) . '/src/bootstrap.php';
+require_once dirname(__DIR__) . '/src/RegistrationRepository.php';
+require_once dirname(__DIR__) . '/src/ScheduleService.php';
 
-if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
-    header('Location: ./index.php');
-    exit;
-}
-
-require_once dirname(__DIR__) . '/config/config.php';
-require_once dirname(__DIR__) . '/config/db.php';
-
-function esc(mixed $v): string {
-    return htmlspecialchars((string)$v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-}
-
-function statusBadge(string $status): string {
-    return match ($status) {
-        'paid'      => '<span class="badge badge-paid">Paid</span>',
-        'pending'   => '<span class="badge badge-pending">Pending</span>',
-        'failed'    => '<span class="badge badge-failed">Failed</span>',
-        'cancelled' => '<span class="badge badge-cancelled">Cancelled</span>',
-        default     => '<span class="badge bg-light text-dark border">' . esc($status) . '</span>',
-    };
-}
+requireAdminAuth();
 
 function exportHeaders(): array {
     return [
@@ -81,31 +60,8 @@ $scheduleLabels = [];
 
 try {
     $pdo = db();
-    
-    // 1. Load tee_time_options (golfers + active guests)
-    $rows = $pdo->query("SELECT id, tournament_id, title, tee_off_time FROM tee_time_options ORDER BY display_order DESC, id DESC")->fetchAll();
-    foreach ($rows as $row) {
-        $tourId = (int)$row['tournament_id'];
-        $optId = (string)$row['id'];
-        
-        $scheduleLabels["golfer_{$tourId}_{$optId}"] = trim((string)$row['title']) . ' · ' . trim((string)$row['tee_off_time']);
-        
-        if ($tourId === (int)ACTIVE_TOURNAMENT_ID) {
-            $scheduleLabels["non_golfer_{$tourId}_{$optId}"] = trim((string)$row['title']) . ' · ' . trim((string)$row['tee_off_time']);
-        }
-    }
-    
-    // 2. Load arrival_window_options_non_golfer (legacy fallback)
-    $winRows = $pdo->query("SELECT id, tournament_id, title, window_time FROM arrival_window_options_non_golfer ORDER BY display_order DESC, id ASC")->fetchAll();
-    foreach ($winRows as $w) {
-        $tourId = (int)$w['tournament_id'];
-        $optId = (string)$w['id'];
-        
-        $key = "non_golfer_{$tourId}_{$optId}";
-        if (!isset($scheduleLabels[$key])) {
-            $scheduleLabels[$key] = trim((string)$w['title']) . ' · ' . trim((string)$w['window_time']);
-        }
-    }
+    $schedule = new ScheduleService($pdo);
+    $scheduleLabels = $schedule->buildScheduleLabels();
 } catch (Throwable $e) {
     error_log('[admin] Failed to load schedule labels: ' . $e->getMessage());
 }
@@ -114,8 +70,7 @@ $allTournaments = [];
 $selectedTournamentId = 1;
 
 try {
-    $pdo = db();
-    $allTournaments = $pdo->query("SELECT id, name, is_active FROM tournaments ORDER BY id DESC")->fetchAll();
+    $allTournaments = db()->query("SELECT id, name, is_active FROM tournaments ORDER BY id DESC")->fetchAll();
 } catch (Throwable $e) {
     error_log('[admin] Failed to load tournaments: ' . $e->getMessage());
 }
@@ -126,37 +81,13 @@ if ($selectedTournamentId <= 0) {
 }
 
 try {
-    $pdo = db();
-    
-    // Load Golfers for selected tournament
-    $gStmt = $pdo->prepare(
-        "SELECT id, tournament_id, unique_id, tran_id, full_name, designation, organization, nationality, gender, profile_photo, name_on_polo, golf_set_brand, contact, email, mailing_address,
-                handicap, tshirt_size, home_club, schedule_group, player_category, reference_name, reference_mission,
-                reference_contact, payment_status, amount, currency, val_id, ssl_session_key, submitted_at, paid_at, 
-                'golfer' AS registration_type, '' AS putting_contest_interest
-         FROM registrations
-         WHERE tournament_id = ?"
-    );
-    $gStmt->execute([$selectedTournamentId]);
-    $g = $gStmt->fetchAll();
-    
-    // Load Non-Golfers for selected tournament
-    $ngStmt = $pdo->prepare(
-        "SELECT id, tournament_id, unique_id, tran_id, full_name, designation, organization, nationality, gender, profile_photo, name_on_polo, '' AS golf_set_brand, contact, email, mailing_address,
-                '' AS handicap, tshirt_size, '' AS home_club, arrival_window AS schedule_group, player_category, reference_name, reference_mission,
-                reference_contact, payment_status, amount, currency, val_id, ssl_session_key, submitted_at, paid_at, 
-                'non_golfer' AS registration_type, putting_contest_interest
-         FROM registrations_non_golfer
-         WHERE tournament_id = ?"
-    );
-    $ngStmt->execute([$selectedTournamentId]);
-    $ng = $ngStmt->fetchAll();
-    
-    $registrations = array_merge($g, $ng);
-    usort($registrations, static fn($a, $b) => strcmp((string)($b['submitted_at'] ?? ''), (string)($a['submitted_at'] ?? '')));
+    $repo = new RegistrationRepository(db());
+    $registrations = $repo->listByTournament($selectedTournamentId);
 } catch (Throwable $e) {
     error_log('[admin] MySQL retrieval failed: ' . $e->getMessage());
 }
+
+$adminCsrf = ensureCsrfToken();
 
 // Handle exports
 $exportType = (string)($_GET['export'] ?? '');
@@ -328,7 +259,6 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
     <a href="tournaments.php" class="btn btn-sm btn-outline-light"><i class="bi bi-trophy me-1"></i>Tournaments</a>
     <a href="tee_time_settings.php" class="btn btn-sm btn-outline-light"><i class="bi bi-calendar3 me-1"></i>Tee Times</a>
     <a href="non_golfer_window_settings.php" class="btn btn-sm btn-outline-light"><i class="bi bi-clock me-1"></i>Arrival Windows</a>
-    <a href="settings.php" class="btn btn-sm btn-outline-light"><i class="bi bi-gear me-1"></i>Capacity</a>
     <a href="admin_logout.php" class="btn btn-sm btn-outline-light"><i class="bi bi-box-arrow-right me-1"></i>Logout</a>
   </div>
 </div>
@@ -479,9 +409,25 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
   let activeType = null;
   const $deleteControls = $('#deleteControls');
 
+  const adminCsrf = <?= json_encode($adminCsrf, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function row(label, value) {
     if (!value) return '';
-    return '<div class="mb-2"><small class="text-muted d-block text-uppercase fw-semibold" style="font-size:0.68rem; letter-spacing:0.04em;">'+label+'</small><strong>'+value+'</strong></div>';
+    return '<div class="mb-2"><small class="text-muted d-block text-uppercase fw-semibold" style="font-size:0.68rem; letter-spacing:0.04em;">'+escapeHtml(label)+'</small><strong>'+escapeHtml(value)+'</strong></div>';
+  }
+
+  function rowHtml(label, html) {
+    if (!html) return '';
+    return '<div class="mb-2"><small class="text-muted d-block text-uppercase fw-semibold" style="font-size:0.68rem; letter-spacing:0.04em;">'+escapeHtml(label)+'</small><div>'+html+'</div></div>';
   }
 
   function statusBadgeHtml(s) {
@@ -505,7 +451,7 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
     $('#cancelDeleteBtn').on('click', resetDeleteBtn);
     $('#confirmDeleteBtn').on('click', function () {
       const $btn = $(this).prop('disabled', true).text('Deleting...');
-      $.post('delete_registration.php', { unique_id: activeUid, registration_type: activeType })
+      $.post('delete_registration.php', { unique_id: activeUid, registration_type: activeType, csrf_token: adminCsrf })
         .done(function (res) {
           if (res.ok) {
             bootstrap.Modal.getInstance(document.getElementById('detailModal')).hide();
@@ -641,7 +587,7 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
       row('Contact Phone', d.contact) + row('Email', d.email) + row('T-Shirt Size', d.tshirt_size) + row('Mailing Address', d.mailing_address) + eventSpecific +
       '</div></div>' + sponsorSection + '<hr>' +
       '<div class="row"><div class="col-md-6">' + 
-      row('Payment Method', 'SSLCommerz') + row('Payment Status', statusBadgeHtml(d.payment_status)) + row('Amount', d.amount ? ('BDT ' + parseInt(d.amount).toLocaleString()) : '') + 
+      row('Payment Method', 'SSLCommerz') + rowHtml('Payment Status', statusBadgeHtml(d.payment_status)) + row('Amount', d.amount ? ('BDT ' + parseInt(d.amount).toLocaleString()) : '') + 
       '</div><div class="col-md-6">' + 
       row('Tran ID', d.tran_id) + row('SSL Val ID', d.val_id) + row('Submitted At', d.submitted_at) + row('Paid At', d.paid_at) + 
       '</div></div>'
@@ -653,10 +599,9 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
     e.stopPropagation();
     const $btn = $(this).prop('disabled', true);
     $.post('send_sms.php', { 
-      contact: $btn.data('contact'), 
-      name: $btn.data('name'),
       uid: $btn.data('uid'),
-      type: $btn.data('type')
+      type: $btn.data('type'),
+      csrf_token: adminCsrf
     })
     .done(function (res) {
       alert('SMS dispatch response: ' + res);

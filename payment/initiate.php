@@ -1,322 +1,89 @@
 <?php
-/**
- * Payment Initiation Endpoint
- * Initiates the payment session and inserts the pending record.
- */
 
 declare(strict_types=1);
 
 ob_start();
-session_start();
-
-require_once dirname(__DIR__) . '/config/config.php';
-require_once dirname(__DIR__) . '/config/db.php';
-require_once dirname(__DIR__) . '/src/Database.php';
+require_once dirname(__DIR__) . '/src/bootstrap.php';
 require_once dirname(__DIR__) . '/src/SSLCommerz.php';
+require_once dirname(__DIR__) . '/src/ScheduleService.php';
+require_once dirname(__DIR__) . '/src/RegistrationRepository.php';
+require_once dirname(__DIR__) . '/src/RegistrationValidator.php';
+require_once dirname(__DIR__) . '/src/ProfilePhotoService.php';
 
 ob_clean();
 header('Content-Type: application/json; charset=utf-8');
 
-function bail(string $msg) {
+function bail(string $msg): void
+{
     ob_clean();
     echo json_encode(['status' => 'fail', 'message' => $msg]);
     exit;
-}
-
-function xss($value): string {
-    return htmlspecialchars(strip_tags(trim((string)$value)), ENT_QUOTES, 'UTF-8');
-}
-
-/**
- * Applies JPEG EXIF orientation so phone photos display upright after GD processing.
- */
-function applyExifOrientation(\GdImage $image, string $srcPath): \GdImage {
-    if (!function_exists('exif_read_data')) {
-        return $image;
-    }
-
-    $exif = @exif_read_data($srcPath);
-    if (!is_array($exif) || empty($exif['Orientation'])) {
-        return $image;
-    }
-
-    switch ((int)$exif['Orientation']) {
-        case 2:
-            imageflip($image, IMG_FLIP_HORIZONTAL);
-            break;
-        case 3:
-            $image = imagerotate($image, 180, 0);
-            break;
-        case 4:
-            imageflip($image, IMG_FLIP_VERTICAL);
-            break;
-        case 5:
-            $image = imagerotate($image, -90, 0);
-            imageflip($image, IMG_FLIP_HORIZONTAL);
-            break;
-        case 6:
-            $image = imagerotate($image, -90, 0);
-            break;
-        case 7:
-            $image = imagerotate($image, 90, 0);
-            imageflip($image, IMG_FLIP_HORIZONTAL);
-            break;
-        case 8:
-            $image = imagerotate($image, 90, 0);
-            break;
-    }
-
-    return $image;
-}
-
-/**
- * Optimizes an uploaded image to a web-safe JPEG with a max dimension of 600px.
- * Falls back to direct copy if GD is unavailable or fails.
- */
-function optimizeProfilePhoto(array $file, string $targetPath): bool {
-    $srcPath = $file['tmp_name'];
-    
-    // Check if GD library is available
-    if (!extension_loaded('gd')) {
-        return move_uploaded_file($srcPath, $targetPath);
-    }
-    
-    $info = getimagesize($srcPath);
-    if (!$info) {
-        return move_uploaded_file($srcPath, $targetPath);
-    }
-    
-    $mime = $info['mime'];
-    switch ($mime) {
-        case 'image/jpeg':
-        case 'image/jpg':
-            $srcImg = @imagecreatefromjpeg($srcPath);
-            break;
-        case 'image/png':
-            $srcImg = @imagecreatefrompng($srcPath);
-            break;
-        case 'image/gif':
-            $srcImg = @imagecreatefromgif($srcPath);
-            break;
-        case 'image/webp':
-            if (function_exists('imagecreatefromwebp')) {
-                $srcImg = @imagecreatefromwebp($srcPath);
-            } else {
-                $srcImg = false;
-            }
-            break;
-        default:
-            $srcImg = false;
-            break;
-    }
-    
-    if (!$srcImg) {
-        return move_uploaded_file($srcPath, $targetPath);
-    }
-
-    if ($mime === 'image/jpeg' || $mime === 'image/jpg') {
-        $srcImg = applyExifOrientation($srcImg, $srcPath);
-    }
-    
-    $origWidth = imagesx($srcImg);
-    $origHeight = imagesy($srcImg);
-    
-    $maxDimension = 600;
-    $newWidth = $origWidth;
-    $newHeight = $origHeight;
-    
-    if ($origWidth > $maxDimension || $origHeight > $maxDimension) {
-        if ($origWidth > $origHeight) {
-            $newWidth = $maxDimension;
-            $newHeight = (int)round(($origHeight / $origWidth) * $maxDimension);
-        } else {
-            $newHeight = $maxDimension;
-            $newWidth = (int)round(($origWidth / $origHeight) * $maxDimension);
-        }
-    }
-    
-    $destImg = imagecreatetruecolor($newWidth, $newHeight);
-    if (!$destImg) {
-        imagedestroy($srcImg);
-        return move_uploaded_file($srcPath, $targetPath);
-    }
-    
-    // Handle PNG transparency / background
-    if ($mime === 'image/png' || $mime === 'image/gif') {
-        imagealphablending($destImg, false);
-        imagesavealpha($destImg, true);
-        $transparent = imagecolorallocatealpha($destImg, 255, 255, 255, 127);
-        imagefilledrectangle($destImg, 0, 0, $newWidth, $newHeight, $transparent);
-    }
-    
-    if (!imagecopyresampled($destImg, $srcImg, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight)) {
-        imagedestroy($srcImg);
-        imagedestroy($destImg);
-        return move_uploaded_file($srcPath, $targetPath);
-    }
-    
-    // Save as JPEG with 80% quality
-    $success = imagejpeg($destImg, $targetPath, 80);
-    
-    imagedestroy($srcImg);
-    imagedestroy($destImg);
-    
-    return $success;
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     bail('Method not allowed.');
 }
 
+if (empty($_POST) && empty($_FILES) && ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+    bail('Upload too large. Please use a smaller profile photo (max 5MB) and try again.');
+}
+
 $raw = $_POST['cart_json'] ?? '';
 $input = json_decode($raw, true);
-
 if (!is_array($input) || empty($input)) {
     bail('Invalid request payload.');
 }
 
-// CSRF validation
-$postedToken  = (string)($input['csrf_token'] ?? '');
-$sessionToken = (string)($_SESSION['csrf_token'] ?? '');
-if ($postedToken === '' || $sessionToken === '' || !hash_equals($sessionToken, $postedToken)) {
+$postedToken = (string)($input['csrf_token'] ?? '');
+if (!validateCsrfToken($postedToken)) {
     bail('Security check failed. Please refresh and try again.');
 }
 
-$regType = xss($input['registration_type'] ?? 'golfer');
+$regType = sanitizeInput((string)($input['registration_type'] ?? 'golfer'));
 
-// Sanitize fields
-$playerCategory   = xss($input['playerCategory']   ?? '');
-$referenceName    = xss($input['referenceName']    ?? '');
-$referenceMission = xss($input['referenceMission'] ?? '');
-$referenceContact = xss($input['referenceContact'] ?? '');
-$fullName         = xss($input['fullName']         ?? '');
-$designation      = xss($input['designation']      ?? '');
-$organization     = xss($input['organization']     ?? '');
-$nationality      = xss($input['nationality']      ?? '');
-$contact          = xss($input['contact']          ?? '');
-$email            = strtolower(trim(filter_var($input['email'] ?? '', FILTER_SANITIZE_EMAIL)));
-$mailingAddress   = xss($input['mailingAddress']   ?? '');
-$tshirtSize       = xss($input['tshirtSize']       ?? '');
-$scheduleGroup    = xss($input['scheduleGroup']    ?? ''); // tee_time_options.id or active tee times
-$nameOnPolo       = xss($input['nameOnPolo']       ?? '');
-
-$handicap = ($regType === 'golfer') ? xss($input['handicap'] ?? '') : '';
-$golfSetBrand = ($regType === 'golfer') ? xss($input['golfSetBrand'] ?? '') : '';
-$puttingContest = ($regType === 'non_golfer') ? xss($input['puttingContestInterest'] ?? '') : '';
-
-// Validation
-$required = [
-    'Player Category' => $playerCategory,
-    'Full Name'       => $fullName,
-    'Designation'     => $designation,
-    'Organization'    => $organization,
-    'Nationality'     => $nationality,
-    'Contact'         => $contact,
-    'Email'           => $email,
-    'T-Shirt Size'    => $tshirtSize,
-    'Schedule Group'  => $scheduleGroup,
-    'Name on Polo'    => $nameOnPolo
-];
-
-if ($regType === 'golfer') {
-    $required['Handicap'] = $handicap;
-    $required['Golf Set Brand'] = $golfSetBrand;
-} else {
-    $required['Putting Contest Interest'] = $puttingContest;
+try {
+    $validator = new RegistrationValidator();
+    $data = $validator->validate($input, $regType);
+} catch (RuntimeException $e) {
+    bail($e->getMessage());
 }
 
-foreach ($required as $label => $val) {
-    if ($val === '') {
-        bail("Please fill in: $label.");
-    }
-}
-
-if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    bail('Invalid email address.');
-}
-
-// Profile photo upload validation
-if (!isset($_FILES['profile_photo']) || $_FILES['profile_photo']['error'] !== UPLOAD_ERR_OK) {
+if (!isset($_FILES['profile_photo']) || !is_array($_FILES['profile_photo'])) {
     bail('Please upload a profile photo.');
 }
+
 $file = $_FILES['profile_photo'];
-$allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-if (!in_array($file['type'], $allowedTypes)) {
-    bail('Invalid profile photo file type. Please upload a JPG, PNG, GIF, or WebP image.');
+if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE || ($file['tmp_name'] ?? '') === '') {
+    bail('Please upload a profile photo. If you already selected one, choose the file again before submitting.');
 }
-if ($file['size'] > 5 * 1024 * 1024) {
-    bail('Profile photo is too large. Max file size is 5MB.');
-}
-
-// Connect & check capacity & duplicates
+$photoService = new ProfilePhotoService();
 try {
-    $pdo = db();
+    $photoService->validateUpload($file);
+} catch (RuntimeException $e) {
+    bail($e->getMessage());
+}
 
-    if ($regType === 'golfer') {
-        // Check Golfer capacity
-        $teeStmt = $pdo->prepare("SELECT slot_number, title FROM tee_time_options WHERE id = ? AND tournament_id = ? AND is_active = 1 LIMIT 1");
-        $teeStmt->execute([(int)$scheduleGroup, ACTIVE_TOURNAMENT_ID]);
-        $tee = $teeStmt->fetch();
-        if (!$tee) {
-            bail('Invalid tee time selection. Please reload and try again.');
-        }
+$pdo = db();
+$repo = new RegistrationRepository($pdo);
+$schedule = new ScheduleService($pdo);
 
-        $capStmt = $pdo->prepare("SELECT COUNT(*) as cnt FROM registrations WHERE schedule_group = ? AND tournament_id = ? AND payment_status = 'paid'");
-        $capStmt->execute([$scheduleGroup, ACTIVE_TOURNAMENT_ID]);
-        $used = (int)$capStmt->fetch()['cnt'];
-        if ($used >= (int)$tee['slot_number']) {
-            bail('Selected tee time group is full. Please select a different schedule group.');
-        }
-
-        // Check duplicate paid email
-        $dupStmt = $pdo->prepare("SELECT id FROM registrations WHERE email = ? AND tournament_id = ? AND payment_status = 'paid' LIMIT 1");
-        $dupStmt->execute([$email, ACTIVE_TOURNAMENT_ID]);
-        if ($dupStmt->fetch()) {
-            bail('This email has already completed golfer registration.');
-        }
-
-        // Delete previous abandoned golfer attempts for this email
-        $pdo->prepare("DELETE FROM registrations WHERE email = ? AND tournament_id = ? AND payment_status IN ('pending','failed','cancelled')")->execute([$email, ACTIVE_TOURNAMENT_ID]);
-
-    } else {
-        // Check Non-Golfer capacity
-        $winStmt = $pdo->prepare("SELECT slot_number, title FROM tee_time_options WHERE id = ? AND tournament_id = ? AND is_active = 1 LIMIT 1");
-        $winStmt->execute([(int)$scheduleGroup, ACTIVE_TOURNAMENT_ID]);
-        $win = $winStmt->fetch();
-        if (!$win) {
-            bail('Invalid tee time selection. Please reload and try again.');
-        }
-
-        $capStmt = $pdo->prepare("SELECT COUNT(*) as cnt FROM registrations_non_golfer WHERE arrival_window = ? AND tournament_id = ? AND payment_status = 'paid'");
-        $capStmt->execute([$scheduleGroup, ACTIVE_TOURNAMENT_ID]);
-        $used = (int)$capStmt->fetch()['cnt'];
-        if ($used >= (int)$win['slot_number']) {
-            bail('Selected tee time group is full. Please select a different tee time.');
-        }
-
-        // Check duplicate paid email
-        $dupStmt = $pdo->prepare("SELECT id FROM registrations_non_golfer WHERE email = ? AND tournament_id = ? AND payment_status = 'paid' LIMIT 1");
-        $dupStmt->execute([$email, ACTIVE_TOURNAMENT_ID]);
-        if ($dupStmt->fetch()) {
-            bail('This email has already completed non-golfer registration.');
-        }
-
-        // Delete previous abandoned guest attempts
-        $pdo->prepare("DELETE FROM registrations_non_golfer WHERE email = ? AND tournament_id = ? AND payment_status IN ('pending','failed','cancelled')")->execute([$email, ACTIVE_TOURNAMENT_ID]);
+try {
+    if ($repo->hasPaidEmail($regType, $data['email'], ACTIVE_TOURNAMENT_ID)) {
+        bail($regType === 'golfer'
+            ? 'This email has already completed golfer registration.'
+            : 'This email has already completed non-golfer registration.');
     }
 } catch (Throwable $e) {
-    error_log('[initiate.php] DB Capacity/Dup Check Failed: ' . $e->getMessage());
+    appLog('[initiate.php] DB duplicate check failed', ['error' => $e->getMessage()]);
     bail('Could not verify registration availability. Please try again.');
 }
 
-// Generate IDs
 $uniqueId = bin2hex(random_bytes(16));
 $tranId = 'WCC-' . strtoupper(substr($uniqueId, 0, 24));
 $now = date('Y-m-d H:i:s');
 $amount = (float)CURRENT_FEE;
 $currency = EVENT_CURRENCY;
 
-// Process and save optimized profile picture
 $uploadDir = dirname(__DIR__) . '/uploads/profile_pics/';
 if (!is_dir($uploadDir)) {
     mkdir($uploadDir, 0755, true);
@@ -325,86 +92,98 @@ $fileName = $uniqueId . '.jpg';
 $targetPath = $uploadDir . $fileName;
 $relativeWebPath = 'uploads/profile_pics/' . $fileName;
 
-if (!optimizeProfilePhoto($file, $targetPath)) {
-    bail('Failed to save and optimize profile photo.');
+if (!$photoService->saveOptimized($file, $targetPath)) {
+    bail('Failed to process profile photo. Please upload a JPG or PNG image.');
 }
 
-// MySQL persistence
+$slotId = $data['schedule_group'];
+
 try {
-    if ($regType === 'golfer') {
-        $stmt = $pdo->prepare(
-            'INSERT INTO registrations 
-               (tournament_id, unique_id, tran_id, full_name, designation, organization, nationality, gender, profile_photo, name_on_polo, golf_set_brand, contact, email, mailing_address, handicap, tshirt_size, home_club, schedule_group, player_category, reference_name, reference_mission, reference_contact, payment_status, amount, currency, submitted_at) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        );
-        $stmt->execute([
-            ACTIVE_TOURNAMENT_ID, $uniqueId, $tranId, $fullName, $designation, $organization, $nationality, null, $relativeWebPath, $nameOnPolo, $golfSetBrand, $contact, $email, $mailingAddress, $handicap, $tshirtSize, null, $scheduleGroup, $playerCategory,
-            $referenceName ?: null, $referenceMission ?: null, $referenceContact ?: null, 'pending', $amount, $currency, $now
-        ]);
-    } else {
-        $stmt = $pdo->prepare(
-            'INSERT INTO registrations_non_golfer 
-               (tournament_id, unique_id, tran_id, full_name, designation, organization, nationality, gender, profile_photo, name_on_polo, contact, email, mailing_address, tshirt_size, arrival_window, putting_contest_interest, player_category, reference_name, reference_mission, reference_contact, payment_status, amount, currency, submitted_at) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        );
-        $stmt->execute([
-            ACTIVE_TOURNAMENT_ID, $uniqueId, $tranId, $fullName, $designation, $organization, $nationality, null, $relativeWebPath, $nameOnPolo, $contact, $email, $mailingAddress, $tshirtSize, $scheduleGroup, $puttingContest, $playerCategory,
-            $referenceName ?: null, $referenceMission ?: null, $referenceContact ?: null, 'pending', $amount, $currency, $now
-        ]);
-    }
+    $schedule->withSlotReservation($regType, $slotId, ACTIVE_TOURNAMENT_ID, function () use (
+        $repo, $regType, $data, $uniqueId, $tranId, $now, $amount, $currency, $relativeWebPath, $slotId
+    ): void {
+        $repo->deleteAbandonedByEmail($regType, $data['email'], ACTIVE_TOURNAMENT_ID);
+
+        $payload = [
+            'tournament_id' => ACTIVE_TOURNAMENT_ID,
+            'unique_id'     => $uniqueId,
+            'tran_id'       => $tranId,
+            'full_name'     => $data['full_name'],
+            'designation'   => $data['designation'],
+            'organization'  => $data['organization'],
+            'nationality'   => $data['nationality'],
+            'profile_photo' => $relativeWebPath,
+            'name_on_polo'  => $data['name_on_polo'],
+            'contact'       => $data['contact'],
+            'email'         => $data['email'],
+            'mailing_address' => $data['mailing_address'],
+            'tshirt_size'   => $data['tshirt_size'],
+            'player_category' => $data['player_category'],
+            'reference_name' => $data['reference_name'],
+            'reference_mission' => $data['reference_mission'],
+            'reference_contact' => $data['reference_contact'],
+            'amount'        => $amount,
+            'currency'      => $currency,
+            'submitted_at'  => $now,
+        ];
+
+        if ($regType === 'golfer') {
+            $payload['schedule_group'] = $slotId;
+            $payload['handicap'] = $data['handicap'];
+            $payload['golf_set_brand'] = $data['golf_set_brand'];
+        } else {
+            $payload['arrival_window'] = $slotId;
+            $payload['putting_contest_interest'] = $data['putting_contest'];
+        }
+
+        $repo->createPending($regType, $payload);
+    });
+} catch (RuntimeException $e) {
+    @unlink($targetPath);
+    bail($e->getMessage());
 } catch (Throwable $e) {
-    error_log('[initiate.php] DB Insert pending registration failed: ' . $e->getMessage());
+    @unlink($targetPath);
+    appLog('[initiate.php] Registration failed', ['error' => $e->getMessage()]);
     bail('Could not save registration details. Please try again.');
 }
 
-// Session state
 $_SESSION['pending_tran_id'] = $tranId;
 $_SESSION['pending_unique_id'] = $uniqueId;
 $_SESSION['pending_reg_type'] = $regType;
-$_SESSION['csrf_token'] = bin2hex(random_bytes(32)); // Rotate token
+$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
-// Call SSLCommerz Gateway
 try {
     $sslCommerz = new SSLCommerz();
-    
-    $sslParams = [
+    $base = rtrim(APP_BASE_URL, '/');
+    $paymentUrl = $sslCommerz->initiatePayment([
         'total_amount'     => $amount,
         'currency'         => $currency,
         'tran_id'          => $tranId,
+        'cancel_url'       => $base . '/payment/cancel.php?tran_id=' . rawurlencode($tranId),
+        'fail_url'         => $base . '/payment/fail.php?tran_id=' . rawurlencode($tranId),
         'product_category' => 'Sports Event',
         'product_name'     => EVENT_NAME . ' Registration',
         'product_profile'  => 'non-physical-goods',
         'num_of_item'      => 1,
-        
-        // Customer Info
-        'cus_name'         => $fullName,
-        'cus_email'        => $email,
-        'cus_phone'        => $contact,
-        'cus_add1'         => $mailingAddress !== '' ? $mailingAddress : 'N/A',
+        'cus_name'         => $data['full_name'],
+        'cus_email'        => $data['email'],
+        'cus_phone'        => $data['contact'],
+        'cus_add1'         => $data['mailing_address'] !== '' ? $data['mailing_address'] : 'N/A',
         'cus_city'         => 'Dhaka',
         'cus_country'      => 'Bangladesh',
-        
-        // Shipping Info (Required, mirror Customer Info)
-        'ship_name'        => $fullName,
-        'ship_add1'        => $mailingAddress !== '' ? $mailingAddress : 'N/A',
+        'ship_name'        => $data['full_name'],
+        'ship_add1'        => $data['mailing_address'] !== '' ? $data['mailing_address'] : 'N/A',
         'ship_city'        => 'Dhaka',
         'ship_country'     => 'Bangladesh',
-        
-        // Extra trace fields returned by Gateway callback POST
         'value_a'          => $uniqueId,
         'value_b'          => $regType,
-        'value_c'          => $scheduleGroup
-    ];
-
-    $paymentUrl = $sslCommerz->initiatePayment($sslParams);
-    
-    ob_clean();
-    echo json_encode([
-        'status'           => 'success',
-        'payment_page_url' => $paymentUrl
+        'value_c'          => $slotId,
     ]);
+
+    ob_clean();
+    echo json_encode(['status' => 'success', 'payment_page_url' => $paymentUrl]);
     exit;
 } catch (Throwable $e) {
-    error_log('[initiate.php] SSLCommerz Call Failed: ' . $e->getMessage());
-    bail('Could not establish connection with SSLCommerz payment gateway: ' . $e->getMessage());
+    appLog('[initiate.php] SSLCommerz call failed', ['error' => $e->getMessage(), 'tran_id' => $tranId]);
+    bail('Could not establish connection with the payment gateway. Please try again.');
 }

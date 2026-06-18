@@ -13,51 +13,13 @@ if (empty($_SESSION['csrf_token'])) {
 
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/src/ScheduleService.php';
 
 $windowOptions = [];
 
 try {
-    $pdo = db();
-    
-    // Load active tee options for guest registration
-    $stmt = $pdo->prepare(
-        "SELECT id, title, reporting_time, group_photo_time, tee_off_time, slot_number 
-         FROM tee_time_options 
-         WHERE tournament_id = ? AND is_active = 1 
-         ORDER BY display_order DESC, id ASC"
-    );
-    $stmt->execute([ACTIVE_TOURNAMENT_ID]);
-    $options = $stmt->fetchAll();
-
-    // Fetch slot counts for paid non-golfers of this tournament
-    $counts = [];
-    $countStmt = $pdo->prepare(
-        "SELECT arrival_window, COUNT(*) as cnt 
-         FROM registrations_non_golfer 
-         WHERE tournament_id = ? AND payment_status = 'paid' 
-         GROUP BY arrival_window"
-    );
-    $countStmt->execute([ACTIVE_TOURNAMENT_ID]);
-    $countRows = $countStmt->fetchAll();
-
-    foreach ($countRows as $row) {
-        $counts[(string)$row['arrival_window']] = (int)$row['cnt'];
-    }
-
-    foreach ($options as $opt) {
-        $id = (string)$opt['id'];
-        $used = $counts[$id] ?? 0;
-        $slotsLeft = max(0, (int)$opt['slot_number'] - $used);
-
-        $windowOptions[] = [
-            'id'          => $id,
-            'title'       => (string)$opt['title'],
-            'reporting'   => (string)$opt['reporting_time'],
-            'group_photo' => (string)$opt['group_photo_time'],
-            'tee_off'     => (string)$opt['tee_off_time'],
-            'slots_left'  => $slotsLeft
-        ];
-    }
+    $schedule = new ScheduleService(db());
+    $windowOptions = $schedule->getNonGolferWindowOptions(ACTIVE_TOURNAMENT_ID);
 } catch (Throwable $e) {
     error_log('[register_non_golfer.php] Failed to load DB window options: ' . $e->getMessage());
 }
@@ -66,20 +28,20 @@ try {
 if (empty($windowOptions)) {
     $windowOptions = [
         [
-            'id'          => '1',
-            'title'       => 'Shotgun-1 (Early)',
-            'reporting'   => '07:00 AM',
-            'group_photo' => '07:15 AM',
-            'tee_off'     => '07:30 AM',
-            'slots_left'  => 36
+            'id'          => 'window1',
+            'title'       => 'Window-1',
+            'reporting'   => '8:00 AM - 10:30 AM',
+            'group_photo' => '09:45 AM',
+            'tee_off'     => '8:00 AM - 10:30 AM',
+            'slots_left'  => 30
         ],
         [
-            'id'          => '2',
-            'title'       => 'Shotgun-2 (Late)',
-            'reporting'   => '09:30 AM',
+            'id'          => 'window2',
+            'title'       => 'Window-2',
+            'reporting'   => '10:00 AM - 12:00 PM',
             'group_photo' => '09:45 AM',
-            'tee_off'     => '10:00 AM',
-            'slots_left'  => 36
+            'tee_off'     => '10:00 AM - 12:00 PM',
+            'slots_left'  => 30
         ]
     ];
 }
@@ -127,95 +89,7 @@ require_once __DIR__ . '/templates/header.php';
       <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>" />
       <input type="hidden" id="registration_type" value="non_golfer" />
 
-      <!-- Player Category -->
-      <div class="form-section-card">
-        <h6 class="form-section-title"><i class="bi bi-person-fill text-gold"></i> Category</h6>
-        <div class="row">
-          <div class="col-md-12">
-            <label for="playerCategory" class="form-label">Category <span class="text-danger">*</span></label>
-            <select class="form-select" id="playerCategory" required>
-              <option value="Diplomats" selected>Diplomat</option>
-              <option value="Non-Diplomats">Non-Diplomat (Corporate / Guest)</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- Reference Section (Only shown for Non-Diplomats) -->
-      <div id="referenceSection" class="p-3 bg-light rounded-3 mb-4" style="display: none; border-left: 4px solid var(--gold);">
-        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-people-fill me-1"></i>Reference / Sponsor Diplomat</h6>
-        <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 0.75rem;">Non-Diplomat registrations require a diplomat sponsor.</p>
-        <div class="row g-2">
-          <div class="col-md-4">
-            <input type="text" class="form-control form-control-sm" id="referenceName" placeholder="Diplomat Full Name" />
-          </div>
-          <div class="col-md-4">
-            <input type="text" class="form-control form-control-sm" id="referenceMission" placeholder="Mission / Embassy" />
-          </div>
-          <div class="col-md-4">
-            <input type="text" class="form-control form-control-sm" id="referenceContact" placeholder="Contact Phone" />
-          </div>
-        </div>
-      </div>
-
-      <!-- Contact & Personal Details -->
-      <div class="form-section-card">
-        <h6 class="form-section-title"><i class="bi bi-card-text text-gold"></i> Personal &amp; Contact Details</h6>
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label for="fullName" class="form-label">Full Name <span class="text-danger">*</span></label>
-            <div class="input-group">
-              <select class="form-select" id="nameTitle" style="max-width: 90px;" required>
-                <option value="Mr." selected>Mr.</option>
-                <option value="Mrs.">Mrs.</option>
-                <option value="Ms.">Ms.</option>
-                <option value="Dr.">Dr.</option>
-                <option value="Prof.">Prof.</option>
-              </select>
-              <input type="text" class="form-control" id="fullName" required placeholder="Name on certificate" />
-            </div>
-          </div>
-          <div class="col-md-6">
-            <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
-            <input type="email" class="form-control" id="email" required placeholder="name@domain.com" />
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label for="contact" class="form-label">Contact Mobile <span class="text-danger">*</span></label>
-            <input type="tel" class="form-control" id="contact" required placeholder="e.g. +8801700000000" />
-          </div>
-          <div class="col-md-6">
-            <label for="nationality" class="form-label">Nationality <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="nationality" required placeholder="Embassy country or origin" />
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label for="designation" class="form-label">Designation <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="designation" required placeholder="e.g. Ambassador, CEO, GM" />
-          </div>
-          <div class="col-md-6">
-            <label for="organization" class="form-label">Organization <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="organization" required placeholder="Embassy name or Corporate office" />
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <div class="col-md-12">
-            <label for="profilePhoto" class="form-label">Profile Photo <span class="text-danger">*</span></label>
-            <input type="file" class="form-control" id="profilePhoto" accept="image/*,.heic,.heif" required />
-            <div class="form-text text-muted">Upload a clear passport-sized photo. Supported formats: JPG, PNG, HEIC (iPhone).</div>
-          </div>
-        </div>
-
-        <div class="mb-0">
-          <label for="mailingAddress" class="form-label">Mailing Address</label>
-          <textarea class="form-control" id="mailingAddress" rows="2" placeholder="Full postal address for invites"></textarea>
-        </div>
-      </div>
+      <?php require_once __DIR__ . '/templates/registration/_participant_fields.php'; ?>
 
       <!-- Guest Preferences -->
       <div class="form-section-card">
@@ -252,8 +126,8 @@ require_once __DIR__ . '/templates/header.php';
         </div>
       </div>
 
-      <!-- Tee Time Preference -->
-      <h5 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="bi bi-clock-fill text-gold me-2"></i>Preferred Tee Time <span class="text-danger">*</span></h5>
+      <!-- Arrival Window Preference -->
+      <h5 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="bi bi-clock-fill text-gold me-2"></i>Preferred Arrival Window <span class="text-danger">*</span></h5>
       
       <div class="row g-3 mb-4">
         <?php foreach ($windowOptions as $opt): ?>
@@ -291,169 +165,15 @@ require_once __DIR__ . '/templates/header.php';
 
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+<script src="<?= htmlspecialchars(APP_BASE_URL, ENT_QUOTES, 'UTF-8') ?>/assets/js/registration.js"></script>
 <script>
-  (function () {
-    'use strict';
-
-    var categorySelect = document.getElementById('playerCategory');
-    var refSection = document.getElementById('referenceSection');
-    
-    // Toggle Sponsor section based on player category selection
-    categorySelect.addEventListener('change', function () {
-      var isNonDiplomat = this.value === 'Non-Diplomats';
-      refSection.style.display = isNonDiplomat ? 'block' : 'none';
-      if (!isNonDiplomat) {
-        document.getElementById('referenceName').value = '';
-        document.getElementById('referenceMission').value = '';
-        document.getElementById('referenceContact').value = '';
-      }
-    });
-
-    // Custom T-shirt size toggler
-    var tshirtSelect = document.getElementById('tshirtSize');
-    var customTshirtContainer = document.getElementById('customTshirtContainer');
-    var customTshirtSize = document.getElementById('customTshirtSize');
-    tshirtSelect.addEventListener('change', function () {
-      if (this.value === 'Oversize') {
-        customTshirtContainer.style.display = 'block';
-        customTshirtSize.required = true;
-      } else {
-        customTshirtContainer.style.display = 'none';
-        customTshirtSize.required = false;
-        customTshirtSize.value = '';
-      }
-    });
-
-    var form = document.getElementById('regForm');
-    var btn = document.getElementById('submitBtn');
-    var errorBox = document.getElementById('errorBox');
-    var photoInput = document.getElementById('profilePhoto');
-
-    function showError(msg) {
-      errorBox.textContent = msg;
-      errorBox.style.display = 'block';
-      btn.disabled = false;
-      btn.innerHTML = '<i class="bi bi-lock-fill"></i> Complete Registration';
-      window.scrollTo({ top: errorBox.offsetTop - 20, behavior: 'smooth' });
+  RegistrationForm.init({
+    scheduleSelector: '[name="arrivalWindow"]:checked',
+    scheduleError: 'Please select your preferred arrival window.',
+    extendPayload: function (payload) {
+      payload.puttingContestInterest = document.getElementById('puttingContest').value;
     }
-
-    function submitFormWithPhoto(photoFile) {
-      var tshirtVal = tshirtSelect.value;
-      var windowSelected = form.querySelector('[name="arrivalWindow"]:checked');
-
-      // Build submit request
-      var payload = {
-        csrf_token: form.querySelector('[name="csrf_token"]').value,
-        registration_type: document.getElementById('registration_type').value,
-        playerCategory: categorySelect.value,
-        referenceName: document.getElementById('referenceName').value.trim(),
-        referenceMission: document.getElementById('referenceMission').value.trim(),
-        referenceContact: document.getElementById('referenceContact').value.trim(),
-        fullName: document.getElementById('nameTitle').value + ' ' + document.getElementById('fullName').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        contact: document.getElementById('contact').value.trim(),
-        nationality: document.getElementById('nationality').value.trim(),
-        designation: document.getElementById('designation').value.trim(),
-        organization: document.getElementById('organization').value.trim(),
-        mailingAddress: document.getElementById('mailingAddress').value.trim(),
-        nameOnPolo: document.getElementById('nameOnPolo').value.trim(),
-        tshirtSize: tshirtVal === 'Oversize' ? 'Oversize (' + customTshirtSize.value.trim() + ')' : tshirtVal,
-        puttingContestInterest: document.getElementById('puttingContest').value,
-        scheduleGroup: windowSelected.value
-      };
-
-      // Loading state
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Submitting Registration...';
-
-      var formData = new FormData();
-      formData.append('cart_json', JSON.stringify(payload));
-      formData.append('profile_photo', photoFile, photoFile.name || 'photo.jpg');
-
-      fetch('payment/initiate.php', {
-        method: 'POST',
-        body: formData
-      })
-      .then(function (res) {
-        return res.text().then(function (text) {
-          try {
-            return JSON.parse(text);
-          } catch (e) {
-            console.error('API response error: ' + text);
-            throw new Error('Server returned invalid response structure.');
-          }
-        });
-      })
-      .then(function (data) {
-        if (data.status === 'success' && data.payment_page_url) {
-          window.location.href = data.payment_page_url;
-        } else {
-          showError(data.message || 'An error occurred during payment setup. Please retry.');
-        }
-      })
-      .catch(function (err) {
-        showError(err.message || 'Connection failure. Please check your internet connection.');
-      });
-    }
-
-    btn.addEventListener('click', function () {
-      errorBox.style.display = 'none';
-
-      // HTML5 Validation Check
-      if (!form.checkValidity()) {
-        form.classList.add('was-validated');
-        showError('Please check that all required fields are filled correctly.');
-        return;
-      }
-
-      var windowSelected = form.querySelector('[name="arrivalWindow"]:checked');
-      if (!windowSelected) {
-        showError('Please select your preferred tee time.');
-        return;
-      }
-
-      if (photoInput.files.length === 0) {
-        showError('Please upload a profile photo.');
-        return;
-      }
-
-      var tshirtVal = tshirtSelect.value;
-      if (tshirtVal === 'Oversize' && !customTshirtSize.value.trim()) {
-        showError('Please enter your custom body width and length sizes.');
-        return;
-      }
-
-      var file = photoInput.files[0];
-      var isHeic = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif') || file.type === 'image/heic' || file.type === 'image/heif';
-
-      if (isHeic) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Converting iPhone Image...';
-        
-        heic2any({
-          blob: file,
-          toType: 'image/jpeg',
-          quality: 0.8
-        })
-        .then(function (convertedBlob) {
-          var convertedFile = file;
-          try {
-            convertedFile = new File([convertedBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
-          } catch (e) {
-            convertedFile = convertedBlob;
-          }
-          submitFormWithPhoto(convertedFile);
-        })
-        .catch(function (err) {
-          console.error(err);
-          showError('Failed to process iPhone image. Please try uploading a JPEG or PNG.');
-        });
-      } else {
-        submitFormWithPhoto(file);
-      }
-    });
-
-  })();
+  });
 </script>
 
 <?php if (IS_EARLY_BIRD_ACTIVE && EARLY_BIRD_DEADLINE): ?>

@@ -63,10 +63,9 @@ try {
     $localPdo = new PDO($dsn, $dbUser, $dbPass, [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_TIMEOUT            => 5 // Fast fail timeout
+        PDO::ATTR_TIMEOUT            => 5,
     ]);
-    
-    $stmt = $localPdo->query("SELECT * FROM tournaments WHERE is_active = 1 LIMIT 1");
+    $stmt = $localPdo->query('SELECT * FROM tournaments WHERE is_active = 1 LIMIT 1');
     $activeTournament = $stmt->fetch() ?: null;
     unset($localPdo, $stmt, $dsn);
 } catch (Throwable $e) {

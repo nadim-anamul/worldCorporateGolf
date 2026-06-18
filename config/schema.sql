@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS `tournaments` (
     `contact_phone_2`     VARCHAR(50)   DEFAULT NULL,
     `is_active`           TINYINT(1)    NOT NULL DEFAULT 0,
     `created_at`          TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at`          TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    `updated_at`          TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX `idx_tournaments_active` (`is_active`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 2. Golfer registrations table
@@ -42,7 +43,7 @@ CREATE TABLE IF NOT EXISTS `registrations` (
     `email`           VARCHAR(255)  NOT NULL,
     `mailing_address` TEXT          DEFAULT NULL,
     `handicap`        VARCHAR(20)   DEFAULT NULL,
-    `tshirt_size`     VARCHAR(10)   DEFAULT NULL,
+    `tshirt_size`     VARCHAR(50)   DEFAULT NULL,
     `home_club`       VARCHAR(255)  DEFAULT NULL,
     `schedule_group`  VARCHAR(64)   NOT NULL, -- references tee_time_options.id
     `player_category` ENUM('Diplomats','Non-Diplomats') NOT NULL,
@@ -62,6 +63,7 @@ CREATE TABLE IF NOT EXISTS `registrations` (
     -- Timestamps
     `submitted_at`    DATETIME      NOT NULL,
     `paid_at`         DATETIME      DEFAULT NULL,
+    `sms_sent_at`     DATETIME      DEFAULT NULL,
     `created_at`      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
@@ -70,6 +72,8 @@ CREATE TABLE IF NOT EXISTS `registrations` (
     INDEX      `idx_tournament`     (`tournament_id`),
     INDEX      `idx_email`          (`email`),
     INDEX      `idx_payment_status` (`payment_status`),
+    INDEX      `idx_reg_tournament_status` (`tournament_id`, `payment_status`),
+    INDEX      `idx_reg_slot_capacity` (`schedule_group`, `tournament_id`, `payment_status`),
     FOREIGN KEY (`tournament_id`) REFERENCES `tournaments` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -91,7 +95,7 @@ CREATE TABLE IF NOT EXISTS `registrations_non_golfer` (
     `contact`                  VARCHAR(50)   DEFAULT NULL,
     `email`                    VARCHAR(255)  NOT NULL,
     `mailing_address`          TEXT          DEFAULT NULL,
-    `tshirt_size`              VARCHAR(10)   DEFAULT NULL,
+    `tshirt_size`              VARCHAR(50)   DEFAULT NULL,
     `arrival_window`           VARCHAR(64)   NOT NULL, -- references arrival_window_options_non_golfer.id
     `putting_contest_interest` ENUM('Yes','No') NOT NULL,
     `player_category`          ENUM('Diplomats','Non-Diplomats') NOT NULL,
@@ -111,6 +115,7 @@ CREATE TABLE IF NOT EXISTS `registrations_non_golfer` (
     -- Timestamps
     `submitted_at`    DATETIME      NOT NULL,
     `paid_at`         DATETIME      DEFAULT NULL,
+    `sms_sent_at`     DATETIME      DEFAULT NULL,
     `created_at`      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
@@ -119,6 +124,8 @@ CREATE TABLE IF NOT EXISTS `registrations_non_golfer` (
     INDEX      `idx_ng_tournament`    (`tournament_id`),
     INDEX      `idx_ng_email`         (`email`),
     INDEX      `idx_ng_payment_status`(`payment_status`),
+    INDEX      `idx_ng_tournament_status` (`tournament_id`, `payment_status`),
+    INDEX      `idx_ng_window_capacity` (`arrival_window`, `tournament_id`, `payment_status`),
     FOREIGN KEY (`tournament_id`) REFERENCES `tournaments` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
