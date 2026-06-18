@@ -282,6 +282,105 @@ require_once __DIR__ . '/config/config.php';
     }
     .contact-chip:hover { background: #cce4e8; color: var(--green-dark); }
     .contact-chip .bi-whatsapp { color: #25d366; }
+
+    /* ── Registration Option Cards ──────────────────────────────────────── */
+    .reg-option-card {
+      background: #fff;
+      border-radius: 1.25rem;
+      border-top: 5px solid var(--gold) !important;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,.05);
+    }
+    .reg-option-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(13, 54, 64, 0.1) !important;
+    }
+    .option-icon {
+      font-size: 2.25rem;
+      color: var(--green-mid);
+      width: 70px;
+      height: 70px;
+      background: var(--green-light);
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+    }
+    .btn-register-card {
+      background: var(--green-mid);
+      color: #fff;
+      font-weight: 600;
+      border: none;
+      border-radius: 50px;
+      transition: background 0.2s;
+      text-decoration: none;
+    }
+    .btn-register-card:hover {
+      background: var(--green-dark);
+      color: #fff;
+    }
+    .btn-register-card-secondary {
+      background: #fff;
+      color: var(--green-mid);
+      font-weight: 600;
+      border: 2px solid var(--green-mid);
+      border-radius: 50px;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .btn-register-card-secondary:hover {
+      background: var(--green-light);
+      color: var(--green-dark);
+      border-color: var(--green-dark);
+    }
+
+    /* ── Partner Ticker ─────────────────────────────────────────────────── */
+    .partner-section {
+      background: #f8fafc;
+      padding: 3.5rem 0;
+      overflow: hidden;
+      border-top: 1px solid #e2e8f0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .marquee-container {
+      display: flex;
+      width: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+    .marquee-content {
+      display: flex;
+      gap: 5rem;
+      animation: marquee 25s linear infinite;
+      min-width: 100%;
+      align-items: center;
+      justify-content: space-around;
+    }
+    .marquee-content:hover {
+      animation-play-state: paused;
+    }
+    .partner-logo-link {
+      display: block;
+      transition: transform 0.25s ease, filter 0.25s ease, opacity 0.25s ease;
+      filter: grayscale(100%);
+      opacity: 0.5;
+    }
+    .partner-logo-link:hover {
+      filter: grayscale(0%);
+      opacity: 1;
+      transform: scale(1.06);
+    }
+    .partner-logo-link img {
+      max-height: 48px;
+      max-width: 160px;
+      object-fit: contain;
+    }
+    @keyframes marquee {
+      0% { transform: translateX(0%); }
+      100% { transform: translateX(-50%); }
+    }
+
     @media (max-width: 768px) {
       .section-title {
         font-size: 1rem;
@@ -304,8 +403,13 @@ require_once __DIR__ . '/config/config.php';
 <section class="hero">
   <div class="container position-relative">
     <h1 class="hero-title"><?= htmlspecialchars(EVENT_NAME, ENT_QUOTES, 'UTF-8') ?></h1>
-    <div class="mt-3 mb-md-5">
+    <div class="mt-3">
       <span class="deadline-chip"><i class="bi bi-clock"></i>&nbsp; Registration Deadline: <?= htmlspecialchars(EVENT_DEADLINE, ENT_QUOTES, 'UTF-8') ?> (or until slots are filled)</span>
+    </div>
+    <div class="mt-4">
+      <a href="#registration-options" class="btn-register btn-lg">
+        <i class="bi bi-person-plus-fill me-1"></i> Register Now
+      </a>
     </div>
   </div>
 </section>
@@ -409,36 +513,66 @@ require_once __DIR__ . '/config/config.php';
   </div>
 </section>
 
-<!-- ══════════════════════  FEE & CTA  ══════════════════════ -->
-<section class="py-5" style="background:var(--green-light);">
+<!-- ══════════════════════  REGISTRATION OPTIONS  ══════════════════════ -->
+<section id="registration-options" class="py-5" style="background:var(--green-light);">
   <div class="container">
-    <div class="row align-items-center g-4">
+    
+    <div class="text-center mb-5">
+      <h2 class="fw-bold mb-2 text-uppercase" style="color:var(--green-dark);">Choose Your Registration Type</h2>
+      <p class="text-muted mx-auto" style="max-width: 600px;">
+        Registration closes on <strong><?= htmlspecialchars(EVENT_DEADLINE, ENT_QUOTES, 'UTF-8') ?></strong> (or until slots are filled). 
+        A participant contribution will be processed securely via SSLCommerz.
+      </p>
+      
+      <?php if (IS_EARLY_BIRD_ACTIVE): ?>
+        <div class="badge bg-warning text-dark px-4 py-2 fs-6 rounded-pill shadow-sm animate-pulse-slow">
+          <i class="bi bi-gift-fill me-1"></i> Early Bird Discount Active: BDT <?= number_format(CURRENT_FEE) ?> (Standard BDT <?= number_format(EVENT_FEE) ?>)
+        </div>
+      <?php else: ?>
+        <div class="badge bg-secondary text-white px-4 py-2 fs-6 rounded-pill shadow-sm">
+          Participant Contribution: BDT <?= number_format(EVENT_FEE) ?>
+        </div>
+      <?php endif; ?>
+    </div>
 
-      <div class="col-md-6">
-        <div class="fee-banner">
-          <div class="mt-3">
-            <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/event-details.jpg', ENT_QUOTES, 'UTF-8') ?>" alt="Event Details" class="img-fluid"
-                 style="max-width:100%; border-radius:.75rem; box-shadow:0 4px 16px rgba(0,0,0,.35);" />
+    <div class="row g-4 justify-content-center">
+      <!-- Golfer Option Card -->
+      <div class="col-md-6 col-lg-5 d-flex">
+        <div class="card reg-option-card w-100 shadow-sm border-0">
+          <div class="card-body p-4 d-flex flex-column text-center">
+            <div class="option-icon mb-3">
+              <i class="bi bi-flag-fill"></i>
+            </div>
+            <h4 class="fw-bold mb-2" style="color:var(--green-dark);">Golfer Participant</h4>
+            <p class="text-muted flex-grow-1 small mb-4">
+              Participate in the main tournament with 18-hole shotgun format. Includes green fee, networking lunch, exclusive tournament goodies, and eligibility for prizes and trophies.
+            </p>
+            <a href="register.php" class="btn btn-register-card py-2.5 w-100">
+              <i class="bi bi-person-plus-fill me-1"></i> Register as Golfer
+            </a>
           </div>
         </div>
       </div>
 
-      <div class="col-md-6 text-center">
-        <h3 class="fw-bold mb-2 text-uppercase" style="color:var(--green-dark);">Confirm your slot now</h3>
-        <p class="text-muted mb-4">
-          Slots are limited. Registration closes on <strong><?= htmlspecialchars(EVENT_DEADLINE, ENT_QUOTES, 'UTF-8') ?> (or until slots are filled). </strong>
-          <?php if (IS_EARLY_BIRD_ACTIVE): ?>
-            A participant contribution of <span class="text-decoration-line-through text-danger">BDT <?= number_format(EVENT_FEE) ?></span> <strong class="text-success fs-5">BDT <?= number_format(CURRENT_FEE) ?>/- (Early Bird Rate)</strong> will be processed securely via SSLCommerz.
-          <?php else: ?>
-            A participant contribution of BDT <?= number_format(EVENT_FEE) ?>/- will be processed securely via SSLCommerz.
-          <?php endif; ?>
-        </p>
-        <a href="#" class="btn-register btn-lg" data-bs-toggle="modal" data-bs-target="#registrationTypeModal">
-          <i class="bi bi-person-plus-fill"></i>&nbsp; Register Now
-        </a>
+      <!-- Guest Option Card -->
+      <div class="col-md-6 col-lg-5 d-flex">
+        <div class="card reg-option-card w-100 shadow-sm border-0">
+          <div class="card-body p-4 d-flex flex-column text-center">
+            <div class="option-icon mb-3">
+              <i class="bi bi-stars"></i>
+            </div>
+            <h4 class="fw-bold mb-2" style="color:var(--green-dark);">Guest / Non-Golfer</h4>
+            <p class="text-muted flex-grow-1 small mb-4">
+              Join as a networking guest. Includes entry to the driving range, guest putting contest experience, lucky draw entry, networking lunch, and prize ceremony access.
+            </p>
+            <a href="register_non_golfer.php" class="btn btn-register-card-secondary py-2.5 w-100">
+              <i class="bi bi-people-fill me-1"></i> Register as Guest
+            </a>
+          </div>
+        </div>
       </div>
-
     </div>
+
   </div>
 </section>
 
@@ -511,38 +645,61 @@ require_once __DIR__ . '/config/config.php';
         </a>
       <?php endif; ?>
     </div>
-    <a href="#" class="btn-register btn-lg mt-3" data-bs-toggle="modal" data-bs-target="#registrationTypeModal">
-      <i class="bi bi-person-plus-fill"></i>&nbsp; Register Now
+    <a href="#registration-options" class="btn-register btn-lg mt-3">
+      <i class="bi bi-person-plus-fill me-1"></i> Register Now
     </a>
   </div>
 </section>
 
-<!-- ══════════════════════  REGISTRATION TYPE MODAL  ══════════════════════ -->
-<div class="modal fade" id="registrationTypeModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0" style="border-radius:1rem; overflow:hidden;">
-      <div class="modal-header" style="background:var(--green-mid); color:#fff;">
-        <h5 class="modal-title fw-bold mb-0">
-          <i class="bi bi-person-badge me-2"></i>Select Registration Type
-        </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body p-4">
-        <p class="text-muted mb-3" style="font-size:.92rem;">
-          Choose the option that best matches your participation in the event.
-        </p>
-        <div class="d-grid gap-3">
-          <a href="<?= htmlspecialchars(APP_BASE_URL . '/register.php', ENT_QUOTES, 'UTF-8') ?>" class="btn btn-lg" style="background:var(--green-mid); color:#fff;">
-            <i class="bi bi-flag-fill me-2"></i>Golfer Registration
-          </a>
-          <a href="<?= htmlspecialchars(APP_BASE_URL . '/register_non_golfer.php', ENT_QUOTES, 'UTF-8') ?>" class="btn btn-lg btn-outline-secondary">
-            <i class="bi bi-stars me-2"></i>Non-Golfer Registration
-          </a>
-        </div>
-      </div>
+<!-- ══════════════════════  PARTNERS  ══════════════════════ -->
+<section class="partner-section">
+  <div class="container text-center mb-4">
+    <h5 class="fw-bold text-uppercase mb-0" style="color:var(--green-dark); letter-spacing: 0.05em; font-size: 0.95rem;"><i class="bi bi-shield-check me-1 text-gold"></i> Event Partners &amp; Sponsors</h5>
+  </div>
+  <div class="marquee-container">
+    <div class="marquee-content">
+      <!-- Duplicate logos twice for a smooth looping marquee (two identical groups of 6 logos for seamless translation) -->
+      <!-- Group 1 -->
+      <a href="https://golfhouse.com.bd" target="_blank" class="partner-logo-link">
+        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/golfhouse-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="GolfHouse" />
+      </a>
+      <a href="https://worldcorporategolftour.com" target="_blank" class="partner-logo-link">
+        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/corporate-tour-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="Corporate Tour" />
+      </a>
+      <a href="https://jolshirigolfclub.com" target="_blank" class="partner-logo-link">
+        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/jolshiri-golf-club-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="Jolshiri Golf Club" />
+      </a>
+      <a href="https://golfhouse.com.bd" target="_blank" class="partner-logo-link">
+        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/golfhouse-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="GolfHouse" />
+      </a>
+      <a href="https://worldcorporategolftour.com" target="_blank" class="partner-logo-link">
+        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/corporate-tour-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="Corporate Tour" />
+      </a>
+      <a href="https://jolshirigolfclub.com" target="_blank" class="partner-logo-link">
+        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/jolshiri-golf-club-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="Jolshiri Golf Club" />
+      </a>
+      <!-- Group 2 (identical copy) -->
+      <a href="https://golfhouse.com.bd" target="_blank" class="partner-logo-link">
+        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/golfhouse-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="GolfHouse" />
+      </a>
+      <a href="https://worldcorporategolftour.com" target="_blank" class="partner-logo-link">
+        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/corporate-tour-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="Corporate Tour" />
+      </a>
+      <a href="https://jolshirigolfclub.com" target="_blank" class="partner-logo-link">
+        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/jolshiri-golf-club-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="Jolshiri Golf Club" />
+      </a>
+      <a href="https://golfhouse.com.bd" target="_blank" class="partner-logo-link">
+        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/golfhouse-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="GolfHouse" />
+      </a>
+      <a href="https://worldcorporategolftour.com" target="_blank" class="partner-logo-link">
+        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/corporate-tour-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="Corporate Tour" />
+      </a>
+      <a href="https://jolshirigolfclub.com" target="_blank" class="partner-logo-link">
+        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/jolshiri-golf-club-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="Jolshiri Golf Club" />
+      </a>
     </div>
   </div>
-</div>
+</section>
 
 <!-- ══════════════════════  FOOTER  ══════════════════════ -->
 <footer class="text-center">
