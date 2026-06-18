@@ -30,6 +30,40 @@ require_once __DIR__ . '/config/config.php';
       --text-dark:   #1a1a1a;
     }
 
+    /* ── Early Bird Banner ────────────────────────────────────────────────── */
+    .early-bird-banner {
+      background: rgba(13, 54, 64, 0.98);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: #fff;
+      font-weight: 550;
+      border-bottom: 2.5px solid var(--gold);
+      z-index: 1050;
+      transition: all 0.3s ease;
+      font-size: 0.91rem;
+    }
+    .early-bird-banner strong {
+      color: var(--gold);
+    }
+    .countdown-badge {
+      letter-spacing: 0.06em;
+      background: rgba(201, 168, 76, 0.15);
+      color: #ffd666;
+      border: 1px solid var(--gold);
+      font-weight: 700;
+      box-shadow: 0 0 10px rgba(201, 168, 76, 0.15);
+      border-radius: 50px;
+      padding: 0.35rem 1rem !important;
+      display: inline-block;
+    }
+    .animate-pulse-slow {
+      animation: pulse-glow 2.5s infinite ease-in-out;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 2px rgba(201, 168, 76, 0.5)); }
+      50% { transform: scale(1.1); opacity: 0.85; filter: drop-shadow(0 0 6px rgba(201, 168, 76, 0.8)); }
+    }
+
     /* ── Hero ────────────────────────────────────────────────────────────── */
     .hero {
       background: linear-gradient(160deg, var(--green-dark) 0%, #144e58 60%, #1e6b78 100%);
@@ -258,10 +292,10 @@ require_once __DIR__ . '/config/config.php';
 <body>
 
 <?php if (IS_EARLY_BIRD_ACTIVE): ?>
-  <div class="early-bird-banner py-2 px-3 text-center position-sticky top-0 w-100 shadow-sm" style="z-index: 1050; background: linear-gradient(90deg, #c9a84c 0%, #d4b45d 50%, #c9a84c 100%); color: #fff; font-weight: 600; font-size: 0.93rem; border-bottom: 2px solid #b2933d;">
+  <div class="early-bird-banner py-2.5 px-3 text-center position-sticky top-0 w-100 shadow-sm">
     <div class="container d-flex flex-wrap align-items-center justify-content-center gap-2">
-      <span><i class="bi bi-lightning-charge-fill text-warning"></i> <strong>Early Bird Offer Active!</strong> Save BDT <?= number_format(EVENT_FEE - EARLY_BIRD_FEE) ?>/- by registering now. Offer ends in:</span>
-      <span id="earlyBirdCountdown" class="badge bg-dark px-3 py-1.5 font-monospace text-warning fs-6" style="letter-spacing: 0.05em;">00d 00h 00m 00s</span>
+      <span class="d-inline-flex align-items-center"><i class="bi bi-lightning-charge-fill text-warning fs-6 me-1.5 animate-pulse-slow"></i> <strong>Early Bird Offer Active!</strong>&nbsp;Save BDT <?= number_format(EVENT_FEE - EARLY_BIRD_FEE) ?>/- by registering now. Offer ends in:</span>
+      <span id="earlyBirdCountdown" class="countdown-badge font-monospace text-warning fs-6">00d 00h 00m 00s</span>
     </div>
   </div>
 <?php endif; ?>
