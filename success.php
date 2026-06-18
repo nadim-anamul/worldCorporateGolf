@@ -48,13 +48,26 @@ if ($uid !== '') {
                 $registration = $row2;
                 $type = 'non_golfer';
                 
-                // Get arrival window details
-                $winStmt = $pdo->prepare('SELECT title, window_time FROM arrival_window_options_non_golfer WHERE id = ?');
-                $winStmt->execute([$row2['arrival_window']]);
-                $win = $winStmt->fetch();
-                $registration['schedule_details'] = $win 
-                    ? $win['title'] . ' (' . $win['window_time'] . ')'
-                    : 'Selected Arrival Window';
+                // Get arrival window / tee time details
+                $win = null;
+                if ((int)$row2['tournament_id'] === (int)ACTIVE_TOURNAMENT_ID) {
+                    $winStmt = $pdo->prepare('SELECT title, reporting_time, tee_off_time FROM tee_time_options WHERE id = ?');
+                    $winStmt->execute([(int)$row2['arrival_window']]);
+                    $tee = $winStmt->fetch();
+                    if ($tee) {
+                        $registration['schedule_details'] = $tee['title'] . ' (Reporting: ' . $tee['reporting_time'] . ' | Tee Off: ' . $tee['tee_off_time'] . ')';
+                        $win = $tee;
+                    }
+                }
+                
+                if (!$win) {
+                    $winStmt = $pdo->prepare('SELECT title, window_time FROM arrival_window_options_non_golfer WHERE id = ?');
+                    $winStmt->execute([(int)$row2['arrival_window']]);
+                    $legacyWin = $winStmt->fetch();
+                    $registration['schedule_details'] = $legacyWin 
+                        ? $legacyWin['title'] . ' (' . $legacyWin['window_time'] . ')'
+                        : 'Selected Arrival Window';
+                }
             }
         }
     } catch (Throwable $e) {

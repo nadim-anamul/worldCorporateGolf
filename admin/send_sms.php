@@ -43,10 +43,22 @@ if ($uid !== '') {
             $stmt->execute([$uid]);
             $row = $stmt->fetch();
             if ($row) {
-                $winStmt = $pdo->prepare('SELECT title FROM arrival_window_options_non_golfer WHERE id = ?');
-                $winStmt->execute([$row['arrival_window']]);
-                $w = $winStmt->fetch();
-                if ($w) $teeTitle = $w['title'];
+                $resolved = false;
+                if ((int)$row['tournament_id'] === (int)ACTIVE_TOURNAMENT_ID) {
+                    $teeStmt = $pdo->prepare('SELECT title FROM tee_time_options WHERE id = ?');
+                    $teeStmt->execute([(int)$row['arrival_window']]);
+                    $w = $teeStmt->fetch();
+                    if ($w) {
+                        $teeTitle = $w['title'];
+                        $resolved = true;
+                    }
+                }
+                if (!$resolved) {
+                    $winStmt = $pdo->prepare('SELECT title FROM arrival_window_options_non_golfer WHERE id = ?');
+                    $winStmt->execute([(int)$row['arrival_window']]);
+                    $w = $winStmt->fetch();
+                    if ($w) $teeTitle = $w['title'];
+                }
                 
                 $tourStmt = $pdo->prepare('SELECT name FROM tournaments WHERE id = ?');
                 $tourStmt->execute([(int)$row['tournament_id']]);

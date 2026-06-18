@@ -132,18 +132,18 @@ try {
 
     } else {
         // Check Non-Golfer capacity
-        $winStmt = $pdo->prepare("SELECT slot_number, title FROM arrival_window_options_non_golfer WHERE id = ? AND tournament_id = ? AND is_active = 1 LIMIT 1");
-        $winStmt->execute([$scheduleGroup, ACTIVE_TOURNAMENT_ID]);
+        $winStmt = $pdo->prepare("SELECT slot_number, title FROM tee_time_options WHERE id = ? AND tournament_id = ? AND is_active = 1 LIMIT 1");
+        $winStmt->execute([(int)$scheduleGroup, ACTIVE_TOURNAMENT_ID]);
         $win = $winStmt->fetch();
         if (!$win) {
-            bail('Invalid arrival window selection. Please reload and try again.');
+            bail('Invalid tee time selection. Please reload and try again.');
         }
 
         $capStmt = $pdo->prepare("SELECT COUNT(*) as cnt FROM registrations_non_golfer WHERE arrival_window = ? AND tournament_id = ? AND payment_status = 'paid'");
         $capStmt->execute([$scheduleGroup, ACTIVE_TOURNAMENT_ID]);
         $used = (int)$capStmt->fetch()['cnt'];
         if ($used >= (int)$win['slot_number']) {
-            bail('Selected arrival window group is full. Please select a different window.');
+            bail('Selected tee time group is full. Please select a different tee time.');
         }
 
         // Check duplicate paid email

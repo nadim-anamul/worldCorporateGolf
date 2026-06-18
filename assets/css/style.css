@@ -218,3 +218,27 @@ footer {
   align-items: center;
   gap: 0.5rem;
 }
+
+/* --- Form Section Card (UI/UX upgrade) --- */
+.form-section-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 1.75rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(13, 54, 64, 0.03);
+  border-left: 4px solid var(--gold) !important;
+  transition: box-shadow 0.2s ease;
+}
+.form-section-card:hover {
+  box-shadow: 0 6px 20px rgba(13, 54, 64, 0.06);
+}
+.form-section-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--green-dark);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}

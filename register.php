@@ -127,26 +127,29 @@ require_once __DIR__ . '/templates/header.php';
       <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>" />
       <input type="hidden" id="registration_type" value="golfer" />
 
-      <!-- Player Category -->
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <label for="playerCategory" class="form-label">Player Category <span class="text-danger">*</span></label>
-          <select class="form-select" id="playerCategory" required>
-            <option value="Diplomats" selected>Diplomat</option>
-            <option value="Non-Diplomats">Non-Diplomat (Corporate / Guest)</option>
-          </select>
-        </div>
-        <div class="col-md-6">
-          <label for="gender" class="form-label">Gender <span class="text-danger">*</span></label>
-          <select class="form-select" id="gender" required>
-            <option value="Male" selected>Male</option>
-            <option value="Female">Female</option>
-          </select>
+      <!-- Player Category & Gender -->
+      <div class="form-section-card">
+        <h6 class="form-section-title"><i class="bi bi-person-fill text-gold"></i> Category &amp; Gender</h6>
+        <div class="row">
+          <div class="col-md-6">
+            <label for="playerCategory" class="form-label">Player Category <span class="text-danger">*</span></label>
+            <select class="form-select" id="playerCategory" required>
+              <option value="Diplomats" selected>Diplomat</option>
+              <option value="Non-Diplomats">Non-Diplomat (Corporate / Guest)</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label for="gender" class="form-label">Gender <span class="text-danger">*</span></label>
+            <select class="form-select" id="gender" required>
+              <option value="Male" selected>Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
         </div>
       </div>
 
       <!-- Reference Section (Only shown for Non-Diplomats) -->
-      <div id="referenceSection" class="p-3 bg-light rounded-3 mb-3" style="display: none; border-left: 4px solid var(--gold);">
+      <div id="referenceSection" class="p-3 bg-light rounded-3 mb-4" style="display: none; border-left: 4px solid var(--gold);">
         <h6 class="fw-bold text-dark mb-2"><i class="bi bi-people-fill me-1"></i>Reference / Sponsor Diplomat</h6>
         <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 0.75rem;">Non-Diplomat registrations require a diplomat sponsor.</p>
         <div class="row g-2">
@@ -162,70 +165,76 @@ require_once __DIR__ . '/templates/header.php';
         </div>
       </div>
 
-      <!-- Primary Participant Info -->
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <label for="fullName" class="form-label">Full Name <span class="text-danger">*</span></label>
-          <input type="text" class="form-control" id="fullName" required placeholder="Name on certificate" />
+      <!-- Contact & Personal Details -->
+      <div class="form-section-card">
+        <h6 class="form-section-title"><i class="bi bi-card-text text-gold"></i> Personal &amp; Contact Details</h6>
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="fullName" class="form-label">Full Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="fullName" required placeholder="Name on certificate" />
+          </div>
+          <div class="col-md-6">
+            <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+            <input type="email" class="form-control" id="email" required placeholder="name@domain.com" />
+          </div>
         </div>
-        <div class="col-md-6">
-          <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
-          <input type="email" class="form-control" id="email" required placeholder="name@domain.com" />
-        </div>
-      </div>
 
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <label for="contact" class="form-label">Contact Mobile <span class="text-danger">*</span></label>
-          <input type="tel" class="form-control" id="contact" required placeholder="e.g. +8801700000000" />
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="contact" class="form-label">Contact Mobile <span class="text-danger">*</span></label>
+            <input type="tel" class="form-control" id="contact" required placeholder="e.g. +8801700000000" />
+          </div>
+          <div class="col-md-6">
+            <label for="nationality" class="form-label">Nationality <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="nationality" required placeholder="Embassy country or origin" />
+          </div>
         </div>
-        <div class="col-md-6">
-          <label for="nationality" class="form-label">Nationality <span class="text-danger">*</span></label>
-          <input type="text" class="form-control" id="nationality" required placeholder="Embassy country or origin" />
-        </div>
-      </div>
 
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <label for="designation" class="form-label">Designation <span class="text-danger">*</span></label>
-          <input type="text" class="form-control" id="designation" required placeholder="e.g. Ambassador, CEO, GM" />
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="designation" class="form-label">Designation <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="designation" required placeholder="e.g. Ambassador, CEO, GM" />
+          </div>
+          <div class="col-md-6">
+            <label for="organization" class="form-label">Organization <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="organization" required placeholder="Embassy name or Corporate office" />
+          </div>
         </div>
-        <div class="col-md-6">
-          <label for="organization" class="form-label">Organization <span class="text-danger">*</span></label>
-          <input type="text" class="form-control" id="organization" required placeholder="Embassy name or Corporate office" />
-        </div>
-      </div>
 
-      <div class="mb-3">
-        <label for="mailingAddress" class="form-label">Mailing Address</label>
-        <textarea class="form-control" id="mailingAddress" rows="2" placeholder="Full postal address for invites"></textarea>
+        <div class="mb-0">
+          <label for="mailingAddress" class="form-label">Mailing Address</label>
+          <textarea class="form-control" id="mailingAddress" rows="2" placeholder="Full postal address for invites"></textarea>
+        </div>
       </div>
 
       <!-- Golfing Credentials -->
-      <div class="row mb-4">
-        <div class="col-md-4">
-          <label for="handicap" class="form-label">Handicap <span class="text-danger">*</span></label>
-          <input type="number" class="form-control" id="handicap" required min="0" max="36" placeholder="0 to 36" />
-        </div>
-        <div class="col-md-4">
-          <label for="tshirtSize" class="form-label">T-Shirt Size <span class="text-danger">*</span></label>
-          <select class="form-select" id="tshirtSize" required>
-            <option value="" disabled selected>Select Size</option>
-            <option value="M">M</option>
-            <option value="L">L</option>
-            <option value="XL">XL</option>
-            <option value="2XL">2XL</option>
-            <option value="3XL">3XL</option>
-          </select>
-        </div>
-        <div class="col-md-4">
-          <label for="homeClub" class="form-label">Home Golf Club <span class="text-danger">*</span></label>
-          <input type="text" class="form-control" id="homeClub" required placeholder="Club where handicap is registered" />
+      <div class="form-section-card">
+        <h6 class="form-section-title"><i class="bi bi-trophy-fill text-gold"></i> Golfing Credentials</h6>
+        <div class="row">
+          <div class="col-md-4">
+            <label for="handicap" class="form-label">Handicap <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" id="handicap" required min="0" max="36" placeholder="0 to 36" />
+          </div>
+          <div class="col-md-4">
+            <label for="tshirtSize" class="form-label">T-Shirt Size <span class="text-danger">*</span></label>
+            <select class="form-select" id="tshirtSize" required>
+              <option value="" disabled selected>Select Size</option>
+              <option value="M">M</option>
+              <option value="L">L</option>
+              <option value="XL">XL</option>
+              <option value="2XL">2XL</option>
+              <option value="3XL">3XL</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="homeClub" class="form-label">Home Golf Club <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="homeClub" required placeholder="Club where handicap is registered" />
+          </div>
         </div>
       </div>
 
       <!-- Tee Time Preference -->
-      <h5 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="bi bi-clock-fill text-gold me-2"></i>Preferred Tee Time</h5>
+      <h5 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="bi bi-clock-fill text-gold me-2"></i>Preferred Tee Time <span class="text-danger">*</span></h5>
       
       <div class="row g-3 mb-4">
         <?php foreach ($teeOptions as $opt): ?>

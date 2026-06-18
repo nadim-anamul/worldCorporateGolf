@@ -118,11 +118,18 @@ try {
             $teeTitle = $row['title'];
         }
     } else {
-        $winStmt = $pdo->prepare('SELECT title FROM arrival_window_options_non_golfer WHERE id = ?');
-        $winStmt->execute([$registration['arrival_window']]);
+        $winStmt = $pdo->prepare('SELECT title FROM tee_time_options WHERE id = ?');
+        $winStmt->execute([(int)$registration['arrival_window']]);
         $row = $winStmt->fetch();
         if ($row) {
             $teeTitle = $row['title'];
+        } else {
+            $winStmt = $pdo->prepare('SELECT title FROM arrival_window_options_non_golfer WHERE id = ?');
+            $winStmt->execute([(int)$registration['arrival_window']]);
+            $row = $winStmt->fetch();
+            if ($row) {
+                $teeTitle = $row['title'];
+            }
         }
     }
 } catch (Throwable $e) {

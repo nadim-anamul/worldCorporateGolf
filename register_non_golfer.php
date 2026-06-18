@@ -19,10 +19,10 @@ $windowOptions = [];
 try {
     $pdo = db();
     
-    // Load active non-golfer arrival windows for current active tournament
+    // Load active tee options for guest registration
     $stmt = $pdo->prepare(
-        "SELECT id, title, window_time, group_photo_time, slot_number 
-         FROM arrival_window_options_non_golfer 
+        "SELECT id, title, reporting_time, group_photo_time, tee_off_time, slot_number 
+         FROM tee_time_options 
          WHERE tournament_id = ? AND is_active = 1 
          ORDER BY display_order DESC, id ASC"
     );
@@ -52,8 +52,9 @@ try {
         $windowOptions[] = [
             'id'          => $id,
             'title'       => (string)$opt['title'],
-            'window'      => (string)$opt['window_time'],
+            'reporting'   => (string)$opt['reporting_time'],
             'group_photo' => (string)$opt['group_photo_time'],
+            'tee_off'     => (string)$opt['tee_off_time'],
             'slots_left'  => $slotsLeft
         ];
     }
@@ -65,18 +66,20 @@ try {
 if (empty($windowOptions)) {
     $windowOptions = [
         [
-            'id'          => 'window1',
-            'title'       => 'Window-1',
-            'window'      => '8:00 AM - 10:30 AM',
-            'group_photo' => '09:45 AM',
-            'slots_left'  => 30
+            'id'          => '1',
+            'title'       => 'Shotgun-1 (Early)',
+            'reporting'   => '07:00 AM',
+            'group_photo' => '07:15 AM',
+            'tee_off'     => '07:30 AM',
+            'slots_left'  => 36
         ],
         [
-            'id'          => 'window2',
-            'title'       => 'Window-2',
-            'window'      => '10:00 AM - 12:00 PM',
+            'id'          => '2',
+            'title'       => 'Shotgun-2 (Late)',
+            'reporting'   => '09:30 AM',
             'group_photo' => '09:45 AM',
-            'slots_left'  => 30
+            'tee_off'     => '10:00 AM',
+            'slots_left'  => 36
         ]
     ];
 }
@@ -124,26 +127,29 @@ require_once __DIR__ . '/templates/header.php';
       <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>" />
       <input type="hidden" id="registration_type" value="non_golfer" />
 
-      <!-- Player Category -->
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <label for="playerCategory" class="form-label">Category <span class="text-danger">*</span></label>
-          <select class="form-select" id="playerCategory" required>
-            <option value="Diplomats" selected>Diplomat</option>
-            <option value="Non-Diplomats">Non-Diplomat (Corporate / Guest)</option>
-          </select>
-        </div>
-        <div class="col-md-6">
-          <label for="gender" class="form-label">Gender <span class="text-danger">*</span></label>
-          <select class="form-select" id="gender" required>
-            <option value="Male" selected>Male</option>
-            <option value="Female">Female</option>
-          </select>
+      <!-- Category & Gender -->
+      <div class="form-section-card">
+        <h6 class="form-section-title"><i class="bi bi-person-fill text-gold"></i> Category &amp; Gender</h6>
+        <div class="row">
+          <div class="col-md-6">
+            <label for="playerCategory" class="form-label">Category <span class="text-danger">*</span></label>
+            <select class="form-select" id="playerCategory" required>
+              <option value="Diplomats" selected>Diplomat</option>
+              <option value="Non-Diplomats">Non-Diplomat (Corporate / Guest)</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label for="gender" class="form-label">Gender <span class="text-danger">*</span></label>
+            <select class="form-select" id="gender" required>
+              <option value="Male" selected>Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
         </div>
       </div>
 
       <!-- Reference Section (Only shown for Non-Diplomats) -->
-      <div id="referenceSection" class="p-3 bg-light rounded-3 mb-3" style="display: none; border-left: 4px solid var(--gold);">
+      <div id="referenceSection" class="p-3 bg-light rounded-3 mb-4" style="display: none; border-left: 4px solid var(--gold);">
         <h6 class="fw-bold text-dark mb-2"><i class="bi bi-people-fill me-1"></i>Reference / Sponsor Diplomat</h6>
         <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 0.75rem;">Non-Diplomat registrations require a diplomat sponsor.</p>
         <div class="row g-2">
@@ -159,68 +165,75 @@ require_once __DIR__ . '/templates/header.php';
         </div>
       </div>
 
-      <!-- Primary Participant Info -->
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <label for="fullName" class="form-label">Full Name <span class="text-danger">*</span></label>
-          <input type="text" class="form-control" id="fullName" required placeholder="Name on certificate" />
+      <!-- Contact & Personal Details -->
+      <div class="form-section-card">
+        <h6 class="form-section-title"><i class="bi bi-card-text text-gold"></i> Personal &amp; Contact Details</h6>
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="fullName" class="form-label">Full Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="fullName" required placeholder="Name on certificate" />
+          </div>
+          <div class="col-md-6">
+            <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+            <input type="email" class="form-control" id="email" required placeholder="name@domain.com" />
+          </div>
         </div>
-        <div class="col-md-6">
-          <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
-          <input type="email" class="form-control" id="email" required placeholder="name@domain.com" />
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="contact" class="form-label">Contact Mobile <span class="text-danger">*</span></label>
+            <input type="tel" class="form-control" id="contact" required placeholder="e.g. +8801700000000" />
+          </div>
+          <div class="col-md-6">
+            <label for="nationality" class="form-label">Nationality <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="nationality" required placeholder="Embassy country or origin" />
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="designation" class="form-label">Designation <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="designation" required placeholder="e.g. Ambassador, CEO, GM" />
+          </div>
+          <div class="col-md-6">
+            <label for="organization" class="form-label">Organization <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="organization" required placeholder="Embassy name or Corporate office" />
+          </div>
+        </div>
+
+        <div class="mb-0">
+          <label for="mailingAddress" class="form-label">Mailing Address</label>
+          <textarea class="form-control" id="mailingAddress" rows="2" placeholder="Full postal address for invites"></textarea>
         </div>
       </div>
 
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <label for="contact" class="form-label">Contact Mobile <span class="text-danger">*</span></label>
-          <input type="tel" class="form-control" id="contact" required placeholder="e.g. +8801700000000" />
-        </div>
-        <div class="col-md-6">
-          <label for="nationality" class="form-label">Nationality <span class="text-danger">*</span></label>
-          <input type="text" class="form-control" id="nationality" required placeholder="Embassy country or origin" />
-        </div>
-      </div>
-
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <label for="designation" class="form-label">Designation <span class="text-danger">*</span></label>
-          <input type="text" class="form-control" id="designation" required placeholder="e.g. Ambassador, CEO, GM" />
-        </div>
-        <div class="col-md-6">
-          <label for="organization" class="form-label">Organization <span class="text-danger">*</span></label>
-          <input type="text" class="form-control" id="organization" required placeholder="Embassy name or Corporate office" />
-        </div>
-      </div>
-
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <label for="tshirtSize" class="form-label">T-Shirt Size <span class="text-danger">*</span></label>
-          <select class="form-select" id="tshirtSize" required>
-            <option value="" disabled selected>Select Size</option>
-            <option value="M">M</option>
-            <option value="L">L</option>
-            <option value="XL">XL</option>
-            <option value="2XL">2XL</option>
-            <option value="3XL">3XL</option>
-          </select>
-        </div>
-        <div class="col-md-6">
-          <label for="puttingContest" class="form-label">Interested in Guest Putting Contest? <span class="text-danger">*</span></label>
-          <select class="form-select" id="puttingContest" required>
-            <option value="Yes" selected>Yes</option>
-            <option value="No">No</option>
-          </select>
+      <!-- Guest Preferences -->
+      <div class="form-section-card">
+        <h6 class="form-section-title"><i class="bi bi-gift-fill text-gold"></i> Guest Preferences</h6>
+        <div class="row">
+          <div class="col-md-6">
+            <label for="tshirtSize" class="form-label">T-Shirt Size <span class="text-danger">*</span></label>
+            <select class="form-select" id="tshirtSize" required>
+              <option value="" disabled selected>Select Size</option>
+              <option value="M">M</option>
+              <option value="L">L</option>
+              <option value="XL">XL</option>
+              <option value="2XL">2XL</option>
+              <option value="3XL">3XL</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label for="puttingContest" class="form-label">Interested in Guest Putting Contest? <span class="text-danger">*</span></label>
+            <select class="form-select" id="puttingContest" required>
+              <option value="Yes" selected>Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <div class="mb-4">
-        <label for="mailingAddress" class="form-label">Mailing Address</label>
-        <textarea class="form-control" id="mailingAddress" rows="2" placeholder="Full postal address for invites"></textarea>
-      </div>
-
-      <!-- Arrival Window Preference -->
-      <h5 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="bi py-3 clock-fill text-gold me-2"></i>Preferred Arrival Window</h5>
+      <!-- Tee Time Preference -->
+      <h5 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="bi bi-clock-fill text-gold me-2"></i>Preferred Tee Time <span class="text-danger">*</span></h5>
       
       <div class="row g-3 mb-4">
         <?php foreach ($windowOptions as $opt): ?>
@@ -235,8 +248,9 @@ require_once __DIR__ . '/templates/header.php';
                   </span>
                 </div>
                 <div class="text-muted" style="font-size: 0.8rem; line-height: 1.5;">
-                  <div><i class="bi bi-clock"></i> Window: <strong><?= htmlspecialchars($opt['window'], ENT_QUOTES, 'UTF-8') ?></strong></div>
+                  <div><i class="bi bi-clock"></i> Reporting: <strong><?= htmlspecialchars($opt['reporting'], ENT_QUOTES, 'UTF-8') ?></strong></div>
                   <div><i class="bi bi-camera"></i> Photos: <strong><?= htmlspecialchars($opt['group_photo'], ENT_QUOTES, 'UTF-8') ?></strong></div>
+                  <div><i class="bi bi-flag"></i> Tee Off: <strong><?= htmlspecialchars($opt['tee_off'], ENT_QUOTES, 'UTF-8') ?></strong></div>
                 </div>
               </div>
             </label>
@@ -298,7 +312,7 @@ require_once __DIR__ . '/templates/header.php';
 
       var windowSelected = form.querySelector('[name="arrivalWindow"]:checked');
       if (!windowSelected) {
-        showError('Please select your preferred arrival window.');
+        showError('Please select your preferred tee time.');
         return;
       }
 

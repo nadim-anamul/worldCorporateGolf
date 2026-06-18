@@ -118,10 +118,17 @@ if ($status === 'VALID' || $status === 'VALIDATED') {
             $r = $teeStmt->fetch();
             if ($r) $teeTitle = $r['title'];
         } else {
-            $winStmt = $pdo->prepare('SELECT title FROM arrival_window_options_non_golfer WHERE id = ?');
-            $winStmt->execute([$registration['arrival_window']]);
+            $winStmt = $pdo->prepare('SELECT title FROM tee_time_options WHERE id = ?');
+            $winStmt->execute([(int)$registration['arrival_window']]);
             $r = $winStmt->fetch();
-            if ($r) $teeTitle = $r['title'];
+            if ($r) {
+                $teeTitle = $r['title'];
+            } else {
+                $winStmt = $pdo->prepare('SELECT title FROM arrival_window_options_non_golfer WHERE id = ?');
+                $winStmt->execute([(int)$registration['arrival_window']]);
+                $r = $winStmt->fetch();
+                if ($r) $teeTitle = $r['title'];
+            }
         }
         
         // Send SMS confirmation

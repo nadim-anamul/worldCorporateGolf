@@ -41,14 +41,17 @@ function exportHeaders(): array {
 }
 
 function exportRow(array $r, int $serial, array $labels): array {
-    $key = (string)($r['schedule_group'] ?? '');
-    $label = $labels[$key] ?? $key;
+    $type = (string)($r['registration_type'] ?? '');
+    $tourId = (int)($r['tournament_id'] ?? 1);
+    $groupId = (string)($r['schedule_group'] ?? '');
+    $key = "{$type}_{$tourId}_{$groupId}";
+    $label = $labels[$key] ?? $groupId;
     return [
         $serial, $r['registration_type'] ?? '', $r['unique_id'] ?? '', $r['tran_id'] ?? '',
         $r['full_name'] ?? '', $r['designation'] ?? '', $r['organization'] ?? '', $r['nationality'] ?? '', $r['gender'] ?? '',
         $r['contact'] ?? '', $r['email'] ?? '', $r['mailing_address'] ?? '', $r['player_category'] ?? '',
         $r['reference_name'] ?? '', $r['reference_mission'] ?? '', $r['reference_contact'] ?? '',
-        $r['tshirt_size'] ?? '', $key, $label, $r['home_club'] ?? '', $r['handicap'] ?? '', $r['putting_contest_interest'] ?? '',
+        $r['tshirt_size'] ?? '', $groupId, $label, $r['home_club'] ?? '', $r['handicap'] ?? '', $r['putting_contest_interest'] ?? '',
         $r['payment_status'] ?? '', $r['amount'] ?? '', $r['currency'] ?? 'BDT',
         $r['val_id'] ?? '', $r['submitted_at'] ?? '', $r['paid_at'] ?? ''
     ];
@@ -61,8 +64,10 @@ function rowMatchesFilters(array $r, string $statusFilter, string $typeFilter, s
     if ($typeFilter !== '' && $type !== $typeFilter) return false;
     if ($searchFilter === '') return true;
     
-    $key = (string)($r['schedule_group'] ?? '');
-    $label = (string)($labels[$key] ?? $key);
+    $groupId = (string)($r['schedule_group'] ?? '');
+    $tourId = (int)($r['tournament_id'] ?? 1);
+    $key = "{$type}_{$tourId}_{$groupId}";
+    $label = (string)($labels[$key] ?? $groupId);
     $hay = strtolower(implode(' ', [
         $r['full_name'] ?? '', $r['organization'] ?? '', $r['email'] ?? '', 
         $r['contact'] ?? '', $label, $r['player_category'] ?? '', $r['registration_type'] ?? ''
@@ -72,22 +77,34 @@ function rowMatchesFilters(array $r, string $statusFilter, string $typeFilter, s
 
 $registrations = [];
 $dataSource = 'mysql';
-$scheduleLabels = [
-    'group1' => 'Shotgun-1 (Early)',
-    'group2' => 'Shotgun-2 (Late)',
-    'window1' => 'Window-1 (8:00 AM - 10:30 AM)',
-    'window2' => 'Window-2 (10:00 AM - 12:00 PM)'
-];
+$scheduleLabels = [];
 
 try {
     $pdo = db();
-    $rows = $pdo->query("SELECT id, title, tee_off_time FROM tee_time_options ORDER BY display_order DESC, id DESC")->fetchAll();
+    
+    // 1. Load tee_time_options (golfers + active guests)
+    $rows = $pdo->query("SELECT id, tournament_id, title, tee_off_time FROM tee_time_options ORDER BY display_order DESC, id DESC")->fetchAll();
     foreach ($rows as $row) {
-        $scheduleLabels[(string)$row['id']] = trim((string)$row['title']) . ' · ' . trim((string)$row['tee_off_time']);
+        $tourId = (int)$row['tournament_id'];
+        $optId = (string)$row['id'];
+        
+        $scheduleLabels["golfer_{$tourId}_{$optId}"] = trim((string)$row['title']) . ' · ' . trim((string)$row['tee_off_time']);
+        
+        if ($tourId === (int)ACTIVE_TOURNAMENT_ID) {
+            $scheduleLabels["non_golfer_{$tourId}_{$optId}"] = trim((string)$row['title']) . ' · ' . trim((string)$row['tee_off_time']);
+        }
     }
-    $winRows = $pdo->query("SELECT id, title, window_time FROM arrival_window_options_non_golfer ORDER BY display_order DESC, id ASC")->fetchAll();
+    
+    // 2. Load arrival_window_options_non_golfer (legacy fallback)
+    $winRows = $pdo->query("SELECT id, tournament_id, title, window_time FROM arrival_window_options_non_golfer ORDER BY display_order DESC, id ASC")->fetchAll();
     foreach ($winRows as $w) {
-        $scheduleLabels[(string)$w['id']] = trim((string)$w['title']) . ' · ' . trim((string)$w['window_time']);
+        $tourId = (int)$w['tournament_id'];
+        $optId = (string)$w['id'];
+        
+        $key = "non_golfer_{$tourId}_{$optId}";
+        if (!isset($scheduleLabels[$key])) {
+            $scheduleLabels[$key] = trim((string)$w['title']) . ' · ' . trim((string)$w['window_time']);
+        }
     }
 } catch (Throwable $e) {
     error_log('[admin] Failed to load schedule labels: ' . $e->getMessage());
@@ -113,7 +130,7 @@ try {
     
     // Load Golfers for selected tournament
     $gStmt = $pdo->prepare(
-        "SELECT id, unique_id, tran_id, full_name, designation, organization, nationality, gender, contact, email, mailing_address,
+        "SELECT id, tournament_id, unique_id, tran_id, full_name, designation, organization, nationality, gender, contact, email, mailing_address,
                 handicap, tshirt_size, home_club, schedule_group, player_category, reference_name, reference_mission,
                 reference_contact, payment_status, amount, currency, val_id, ssl_session_key, submitted_at, paid_at, 
                 'golfer' AS registration_type, '' AS putting_contest_interest
@@ -125,7 +142,7 @@ try {
     
     // Load Non-Golfers for selected tournament
     $ngStmt = $pdo->prepare(
-        "SELECT id, unique_id, tran_id, full_name, designation, organization, nationality, gender, contact, email, mailing_address,
+        "SELECT id, tournament_id, unique_id, tran_id, full_name, designation, organization, nationality, gender, contact, email, mailing_address,
                 '' AS handicap, tshirt_size, '' AS home_club, arrival_window AS schedule_group, player_category, reference_name, reference_mission,
                 reference_contact, payment_status, amount, currency, val_id, ssl_session_key, submitted_at, paid_at, 
                 'non_golfer' AS registration_type, putting_contest_interest
@@ -148,6 +165,7 @@ try {
         foreach (array_reverse($d) as $i => $r) {
             $registrations[] = [
                 'id' => $i + 1,
+                'tournament_id' => $r['tournament_id'] ?? $selectedTournamentId,
                 'unique_id' => $r['unique_id'] ?? '',
                 'tran_id' => $r['tran_id'] ?? '',
                 'full_name' => $r['full_name'] ?? '',
@@ -185,6 +203,7 @@ try {
         foreach (array_reverse($d) as $i => $r) {
             $registrations[] = [
                 'id' => $i + 1,
+                'tournament_id' => $r['tournament_id'] ?? $selectedTournamentId,
                 'unique_id' => $r['unique_id'] ?? '',
                 'tran_id' => $r['tran_id'] ?? '',
                 'full_name' => $r['full_name'] ?? '',
@@ -487,7 +506,7 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
               <td><?= esc($r['contact']) ?></td>
               <td><?= esc($r['email']) ?></td>
               <td><?= esc($r['tshirt_size']) ?></td>
-              <td><?= esc($scheduleLabels[$r['schedule_group']] ?? $r['schedule_group']) ?></td>
+              <td><?= esc($scheduleLabels[($r['registration_type'] ?? '') . '_' . ($r['tournament_id'] ?? 1) . '_' . ($r['schedule_group'] ?? '')] ?? $r['schedule_group']) ?></td>
               <td><?= statusBadge((string)$r['payment_status']) ?></td>
               <td><?= $r['amount'] !== '' ? 'BDT ' . number_format((float)$r['amount'], 0) : '—' ?></td>
               <td><?= esc(substr((string)$r['submitted_at'], 0, 16)) ?></td>
@@ -630,10 +649,11 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
     
     const scheduleLabels = <?= json_encode($scheduleLabels, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) ?>;
     const typeLabel = d.registration_type === 'non_golfer' ? 'Non-Golfer' : 'Golfer';
+    const labelKey = d.registration_type + '_' + (d.tournament_id || 1) + '_' + d.schedule_group;
     
     const eventSpecific = d.registration_type === 'non_golfer'
-      ? row('Arrival Window', scheduleLabels[d.schedule_group] || d.schedule_group) + row('Guest Putting Contest Interest', d.putting_contest_interest)
-      : row('Tee Time Schedule', scheduleLabels[d.schedule_group] || d.schedule_group) + row('Handicap', d.handicap) + row('Home Club', d.home_club);
+      ? row('Arrival Window', scheduleLabels[labelKey] || d.schedule_group) + row('Guest Putting Contest Interest', d.putting_contest_interest)
+      : row('Tee Time Schedule', scheduleLabels[labelKey] || d.schedule_group) + row('Handicap', d.handicap) + row('Home Club', d.home_club);
       
     const sponsorSection = d.player_category === 'Non-Diplomats'
       ? '<hr><div class="p-3 bg-light rounded"><h6 class="fw-bold mb-2">Diplomatic Sponsor</h6><div class="row"><div class="col-md-4">'+row('Sponsor Name', d.reference_name)+'</div><div class="col-md-4">'+row('Sponsor Mission', d.reference_mission)+'</div><div class="col-md-4">'+row('Sponsor Contact', d.reference_contact)+'</div></div></div>'
