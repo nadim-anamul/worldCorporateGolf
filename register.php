@@ -206,8 +206,8 @@ require_once __DIR__ . '/templates/header.php';
         <div class="row mb-3">
           <div class="col-md-12">
             <label for="profilePhoto" class="form-label">Profile Photo <span class="text-danger">*</span></label>
-            <input type="file" class="form-control" id="profilePhoto" accept="image/*" required />
-            <div class="form-text text-muted">Upload a clear passport-sized photo. Supported formats: JPG, PNG.</div>
+            <input type="file" class="form-control" id="profilePhoto" accept="image/*,.heic,.heif" required />
+            <div class="form-text text-muted">Upload a clear passport-sized photo. Supported formats: JPG, PNG, HEIC (iPhone).</div>
           </div>
         </div>
 
@@ -310,6 +310,7 @@ require_once __DIR__ . '/templates/header.php';
 </div>
 
 <!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
 <script>
   (function () {
     'use strict';
@@ -356,32 +357,9 @@ require_once __DIR__ . '/templates/header.php';
       window.scrollTo({ top: errorBox.offsetTop - 20, behavior: 'smooth' });
     }
 
-    btn.addEventListener('click', function () {
-      errorBox.style.display = 'none';
-
-      // HTML5 Validation Check
-      if (!form.checkValidity()) {
-        form.classList.add('was-validated');
-        showError('Please check that all required fields are filled correctly.');
-        return;
-      }
-
-      var teeSelected = form.querySelector('[name="scheduleGroup"]:checked');
-      if (!teeSelected) {
-        showError('Please select your preferred tee time.');
-        return;
-      }
-
-      if (photoInput.files.length === 0) {
-        showError('Please upload a profile photo.');
-        return;
-      }
-
+    function submitFormWithPhoto(photoFile) {
       var tshirtVal = tshirtSelect.value;
-      if (tshirtVal === 'Oversize' && !customTshirtSize.value.trim()) {
-        showError('Please enter your custom body width and length sizes.');
-        return;
-      }
+      var teeSelected = form.querySelector('[name="scheduleGroup"]:checked');
 
       // Build submit request
       var payload = {
@@ -411,7 +389,7 @@ require_once __DIR__ . '/templates/header.php';
 
       var formData = new FormData();
       formData.append('cart_json', JSON.stringify(payload));
-      formData.append('profile_photo', photoInput.files[0]);
+      formData.append('profile_photo', photoFile, photoFile.name || 'photo.jpg');
 
       fetch('payment/initiate.php', {
         method: 'POST',
@@ -437,6 +415,63 @@ require_once __DIR__ . '/templates/header.php';
       .catch(function (err) {
         showError(err.message || 'Connection failure. Please check your internet connection.');
       });
+    }
+
+    btn.addEventListener('click', function () {
+      errorBox.style.display = 'none';
+
+      // HTML5 Validation Check
+      if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        showError('Please check that all required fields are filled correctly.');
+        return;
+      }
+
+      var teeSelected = form.querySelector('[name="scheduleGroup"]:checked');
+      if (!teeSelected) {
+        showError('Please select your preferred tee time.');
+        return;
+      }
+
+      if (photoInput.files.length === 0) {
+        showError('Please upload a profile photo.');
+        return;
+      }
+
+      var tshirtVal = tshirtSelect.value;
+      if (tshirtVal === 'Oversize' && !customTshirtSize.value.trim()) {
+        showError('Please enter your custom body width and length sizes.');
+        return;
+      }
+
+      var file = photoInput.files[0];
+      var isHeic = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif') || file.type === 'image/heic' || file.type === 'image/heif';
+
+      if (isHeic) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Converting iPhone Image...';
+        
+        heic2any({
+          blob: file,
+          toType: 'image/jpeg',
+          quality: 0.8
+        })
+        .then(function (convertedBlob) {
+          var convertedFile = file;
+          try {
+            convertedFile = new File([convertedBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+          } catch (e) {
+            convertedFile = convertedBlob;
+          }
+          submitFormWithPhoto(convertedFile);
+        })
+        .catch(function (err) {
+          console.error(err);
+          showError('Failed to process iPhone image. Please try uploading a JPEG or PNG.');
+        });
+      } else {
+        submitFormWithPhoto(file);
+      }
     });
 
   })();
