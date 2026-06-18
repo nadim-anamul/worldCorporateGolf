@@ -1,0 +1,13 @@
+# Enable Rewrite Engine
+RewriteEngine On
+
+# Allow extensionless URLs
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.php -f
+RewriteRule ^([^\.]+)$ $1.php [NC,L]
+
+# Prevent directory browsing
+Options -Indexes
+
+# Restrict access to sensitive directories
+RewriteRule ^(config|src|templates|data|\.env) - [F,L]

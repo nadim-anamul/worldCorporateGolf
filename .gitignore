@@ -1,0 +1,15 @@
+# Environment configuration / secrets
+.env
+
+# Database backups & local user data JSON files
+data/*.json
+!data/.gitkeep
+
+# Legacy backup directories
+backup_old/
+
+# System / IDE files
+.DS_Store
+.vscode/
+.idea/
+*.log

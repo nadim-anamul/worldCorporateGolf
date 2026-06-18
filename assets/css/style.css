@@ -1,0 +1,220 @@
+/* Custom Design System for World Corporate Golf Tour */
+
+:root {
+  --green-dark:    #0d3640;
+  --green-mid:     #144e58;
+  --green-light:   #e4f0f2;
+  --green-accent:  #1e6b78;
+  --gold:          #c9a84c;
+  --gold-dark:     #b0903a;
+  --gold-light:    #f9f3e3;
+  --text-dark:     #1e293b;
+  --text-muted:    #64748b;
+  --bg-gradient:   linear-gradient(135deg, #0d3640 0%, #144e58 100%);
+  --card-shadow:   0 8px 30px rgba(13, 54, 64, 0.08);
+  --hover-shadow:  0 15px 35px rgba(13, 54, 64, 0.15);
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  color: var(--text-dark);
+  background-color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  color: var(--green-dark);
+}
+
+.font-serif {
+  font-family: 'Playfair Display', serif;
+}
+
+/* --- Hero Section --- */
+.hero {
+  background: var(--bg-gradient);
+  color: #fff;
+  padding: 5rem 1rem 4rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('../images/event-details.jpg') center/cover no-repeat;
+  opacity: 0.15;
+}
+
+.hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  margin-top: 1rem;
+}
+
+.hero-subtitle {
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  opacity: 0.9;
+  font-weight: 400;
+  max-width: 700px;
+  margin: 1rem auto 0;
+}
+
+/* --- Cards & Containers --- */
+.premium-card {
+  background: #ffffff;
+  border: none;
+  border-radius: 1.25rem;
+  box-shadow: var(--card-shadow);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+}
+
+.premium-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--hover-shadow);
+}
+
+.section-title {
+  font-size: 1.5rem;
+  color: var(--green-dark);
+  border-left: 5px solid var(--gold);
+  padding-left: 0.85rem;
+  margin-bottom: 1.5rem;
+  font-weight: 700;
+}
+
+/* --- Buttons --- */
+.btn-gold {
+  background-color: var(--gold);
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  border-radius: 50px;
+  padding: 0.75rem 2rem;
+  transition: all 0.3s ease;
+}
+
+.btn-gold:hover {
+  background-color: var(--gold-dark);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(201, 168, 76, 0.4);
+}
+
+.btn-outline-green {
+  color: var(--green-mid);
+  border: 2px solid var(--green-mid);
+  background: transparent;
+  font-weight: 600;
+  border-radius: 50px;
+  padding: 0.75rem 2rem;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-green:hover {
+  background-color: var(--green-mid);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+/* --- Registration Forms --- */
+.form-container {
+  max-width: 800px;
+  margin: -3rem auto 3rem;
+  position: relative;
+  z-index: 10;
+  background: #fff;
+  border-radius: 1.5rem;
+  box-shadow: 0 10px 40px rgba(13, 54, 64, 0.12);
+  padding: 2.5rem;
+  border-top: 5px solid var(--gold);
+}
+
+.form-label {
+  font-weight: 550;
+  color: var(--green-dark);
+}
+
+.form-control, .form-select {
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  padding: 0.625rem 0.85rem;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--green-mid);
+  box-shadow: 0 0 0 4px rgba(20, 78, 88, 0.1);
+  outline: none;
+}
+
+/* --- Slots / Option selectors --- */
+.slot-option-card {
+  border: 2px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #fff;
+  height: 100%;
+}
+
+.slot-option-card:hover {
+  border-color: var(--green-mid);
+  background: #fafcfc;
+}
+
+.slot-option-input:checked + label .slot-option-card {
+  border-color: var(--green-mid);
+  background: var(--green-light);
+  box-shadow: 0 0 0 4px rgba(20, 78, 88, 0.08);
+}
+
+.badge-slots {
+  background-color: var(--green-dark);
+  color: #fff;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+/* --- Footer --- */
+footer {
+  background: var(--green-dark);
+  color: #94a3b8;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+/* --- Info Cards --- */
+.info-icon {
+  font-size: 2.25rem;
+  color: var(--gold);
+  margin-bottom: 0.75rem;
+}
+
+/* --- Deadline Chip --- */
+.deadline-chip {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 193, 7, 0.4);
+  color: #fef08a;
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
