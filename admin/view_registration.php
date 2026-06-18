@@ -35,7 +35,7 @@ function exportHeaders(): array {
         'Designation', 'Organization', 'Nationality', 'Gender', 'Contact', 'Email', 
         'Mailing Address', 'Category', 'Reference Name', 'Reference Mission', 
         'Reference Contact', 'T-Shirt Size', 'Schedule/Window Key', 'Schedule/Window Title', 
-        'Home Club', 'Handicap', 'Putting Contest Interest', 'Payment Status', 'Amount', 
+        'Home Club', 'Handicap', 'Putting Contest Interest', 'Profile Photo', 'Name on Polo', 'Golf Set Brand', 'Payment Status', 'Amount', 
         'Currency', 'SSL Val ID', 'Submitted At', 'Paid At'
     ];
 }
@@ -52,6 +52,7 @@ function exportRow(array $r, int $serial, array $labels): array {
         $r['contact'] ?? '', $r['email'] ?? '', $r['mailing_address'] ?? '', $r['player_category'] ?? '',
         $r['reference_name'] ?? '', $r['reference_mission'] ?? '', $r['reference_contact'] ?? '',
         $r['tshirt_size'] ?? '', $groupId, $label, $r['home_club'] ?? '', $r['handicap'] ?? '', $r['putting_contest_interest'] ?? '',
+        $r['profile_photo'] ?? '', $r['name_on_polo'] ?? '', $r['golf_set_brand'] ?? '',
         $r['payment_status'] ?? '', $r['amount'] ?? '', $r['currency'] ?? 'BDT',
         $r['val_id'] ?? '', $r['submitted_at'] ?? '', $r['paid_at'] ?? ''
     ];
@@ -130,7 +131,7 @@ try {
     
     // Load Golfers for selected tournament
     $gStmt = $pdo->prepare(
-        "SELECT id, tournament_id, unique_id, tran_id, full_name, designation, organization, nationality, gender, contact, email, mailing_address,
+        "SELECT id, tournament_id, unique_id, tran_id, full_name, designation, organization, nationality, gender, profile_photo, name_on_polo, golf_set_brand, contact, email, mailing_address,
                 handicap, tshirt_size, home_club, schedule_group, player_category, reference_name, reference_mission,
                 reference_contact, payment_status, amount, currency, val_id, ssl_session_key, submitted_at, paid_at, 
                 'golfer' AS registration_type, '' AS putting_contest_interest
@@ -142,7 +143,7 @@ try {
     
     // Load Non-Golfers for selected tournament
     $ngStmt = $pdo->prepare(
-        "SELECT id, tournament_id, unique_id, tran_id, full_name, designation, organization, nationality, gender, contact, email, mailing_address,
+        "SELECT id, tournament_id, unique_id, tran_id, full_name, designation, organization, nationality, gender, profile_photo, name_on_polo, '' AS golf_set_brand, contact, email, mailing_address,
                 '' AS handicap, tshirt_size, '' AS home_club, arrival_window AS schedule_group, player_category, reference_name, reference_mission,
                 reference_contact, payment_status, amount, currency, val_id, ssl_session_key, submitted_at, paid_at, 
                 'non_golfer' AS registration_type, putting_contest_interest
@@ -192,7 +193,10 @@ try {
                 'submitted_at' => $r['submitted_at'] ?? '',
                 'paid_at' => $r['paid_at'] ?? '',
                 'registration_type' => 'golfer',
-                'putting_contest_interest' => ''
+                'putting_contest_interest' => '',
+                'profile_photo' => $r['profile_photo'] ?? '',
+                'name_on_polo' => $r['name_on_polo'] ?? '',
+                'golf_set_brand' => $r['golf_set_brand'] ?? ''
             ];
         }
     }
@@ -230,7 +234,10 @@ try {
                 'submitted_at' => $r['submitted_at'] ?? '',
                 'paid_at' => $r['paid_at'] ?? '',
                 'registration_type' => 'non_golfer',
-                'putting_contest_interest' => $r['putting_contest_interest'] ?? ''
+                'putting_contest_interest' => $r['putting_contest_interest'] ?? '',
+                'profile_photo' => $r['profile_photo'] ?? '',
+                'name_on_polo' => $r['name_on_polo'] ?? '',
+                'golf_set_brand' => ''
             ];
         }
     }
@@ -652,15 +659,20 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
     const labelKey = d.registration_type + '_' + (d.tournament_id || 1) + '_' + d.schedule_group;
     
     const eventSpecific = d.registration_type === 'non_golfer'
-      ? row('Arrival Window', scheduleLabels[labelKey] || d.schedule_group) + row('Guest Putting Contest Interest', d.putting_contest_interest)
-      : row('Tee Time Schedule', scheduleLabels[labelKey] || d.schedule_group) + row('Handicap', d.handicap) + row('Home Club', d.home_club);
+      ? row('Arrival Window', scheduleLabels[labelKey] || d.schedule_group) + row('Guest Putting Contest Interest', d.putting_contest_interest) + row('Name on Polo', d.name_on_polo)
+      : row('Tee Time Schedule', scheduleLabels[labelKey] || d.schedule_group) + row('Handicap', d.handicap) + row('Golf Set Brand', d.golf_set_brand) + row('Name on Polo', d.name_on_polo);
       
     const sponsorSection = d.player_category === 'Non-Diplomats'
       ? '<hr><div class="p-3 bg-light rounded"><h6 class="fw-bold mb-2">Diplomatic Sponsor</h6><div class="row"><div class="col-md-4">'+row('Sponsor Name', d.reference_name)+'</div><div class="col-md-4">'+row('Sponsor Mission', d.reference_mission)+'</div><div class="col-md-4">'+row('Sponsor Contact', d.reference_contact)+'</div></div></div>'
       : '';
 
+    const photoHtml = d.profile_photo 
+      ? '<div class="text-center mb-4"><img src="../' + d.profile_photo + '" class="img-thumbnail rounded-circle shadow-sm" style="width: 120px; height: 120px; object-fit: cover;" alt="Profile Picture"></div>'
+      : '';
+
     $('#modalTitle').text((d.full_name || 'Registration') + ' (' + typeLabel + ')');
     $('#modalBody').html(
+      photoHtml +
       '<div class="row"><div class="col-md-6">' +
       row('Registration Type', typeLabel) + row('Full Name', d.full_name) + row('Designation', d.designation) + row('Organization', d.organization) + row('Nationality', d.nationality) + row('Gender', d.gender) + row('Category', d.player_category) +
       '</div><div class="col-md-6">' +

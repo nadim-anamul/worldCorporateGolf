@@ -127,22 +127,15 @@ require_once __DIR__ . '/templates/header.php';
       <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>" />
       <input type="hidden" id="registration_type" value="golfer" />
 
-      <!-- Player Category & Gender -->
+      <!-- Player Category -->
       <div class="form-section-card">
-        <h6 class="form-section-title"><i class="bi bi-person-fill text-gold"></i> Category &amp; Gender</h6>
+        <h6 class="form-section-title"><i class="bi bi-person-fill text-gold"></i> Player Category</h6>
         <div class="row">
-          <div class="col-md-6">
+          <div class="col-md-12">
             <label for="playerCategory" class="form-label">Player Category <span class="text-danger">*</span></label>
             <select class="form-select" id="playerCategory" required>
               <option value="Diplomats" selected>Diplomat</option>
               <option value="Non-Diplomats">Non-Diplomat (Corporate / Guest)</option>
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label for="gender" class="form-label">Gender <span class="text-danger">*</span></label>
-            <select class="form-select" id="gender" required>
-              <option value="Male" selected>Male</option>
-              <option value="Female">Female</option>
             </select>
           </div>
         </div>
@@ -171,7 +164,16 @@ require_once __DIR__ . '/templates/header.php';
         <div class="row mb-3">
           <div class="col-md-6">
             <label for="fullName" class="form-label">Full Name <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="fullName" required placeholder="Name on certificate" />
+            <div class="input-group">
+              <select class="form-select" id="nameTitle" style="max-width: 90px;" required>
+                <option value="Mr." selected>Mr.</option>
+                <option value="Mrs.">Mrs.</option>
+                <option value="Ms.">Ms.</option>
+                <option value="Dr.">Dr.</option>
+                <option value="Prof.">Prof.</option>
+              </select>
+              <input type="text" class="form-control" id="fullName" required placeholder="Name on certificate" />
+            </div>
           </div>
           <div class="col-md-6">
             <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
@@ -201,21 +203,54 @@ require_once __DIR__ . '/templates/header.php';
           </div>
         </div>
 
+        <div class="row mb-3">
+          <div class="col-md-12">
+            <label for="profilePhoto" class="form-label">Profile Photo <span class="text-danger">*</span></label>
+            <input type="file" class="form-control" id="profilePhoto" accept="image/*" required />
+            <div class="form-text text-muted">Upload a clear passport-sized photo. Supported formats: JPG, PNG.</div>
+          </div>
+        </div>
+
         <div class="mb-0">
           <label for="mailingAddress" class="form-label">Mailing Address</label>
           <textarea class="form-control" id="mailingAddress" rows="2" placeholder="Full postal address for invites"></textarea>
         </div>
       </div>
 
-      <!-- Golfing Credentials -->
+      <!-- Golfing Credentials & Apparel -->
       <div class="form-section-card">
-        <h6 class="form-section-title"><i class="bi bi-trophy-fill text-gold"></i> Golfing Credentials</h6>
-        <div class="row">
-          <div class="col-md-4">
+        <h6 class="form-section-title"><i class="bi bi-trophy-fill text-gold"></i> Golfing Credentials &amp; Apparel</h6>
+        <div class="row mb-3">
+          <div class="col-md-6">
             <label for="handicap" class="form-label">Handicap <span class="text-danger">*</span></label>
-            <input type="number" class="form-control" id="handicap" required min="0" max="36" placeholder="0 to 36" />
+            <select class="form-select" id="handicap" required>
+              <option value="" disabled selected>Select Handicap Range</option>
+              <option value="0-12">0-12</option>
+              <option value="13-18">13-18</option>
+              <option value="19-24">19-24</option>
+              <option value="25-above">25-above</option>
+            </select>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-6">
+            <label for="golfSetBrand" class="form-label">Golf Set Brand <span class="text-danger">*</span></label>
+            <select class="form-select" id="golfSetBrand" required>
+              <option value="" disabled selected>Select Brand</option>
+              <option value="Callaway">Callaway</option>
+              <option value="TaylorMade">TaylorMade</option>
+              <option value="Ping">Ping</option>
+              <option value="Titleist">Titleist</option>
+              <option value="Mizuno">Mizuno</option>
+              <option value="Cobra">Cobra</option>
+              <option value="Wilson">Wilson</option>
+              <option value="Srixon">Srixon</option>
+              <option value="PXG">PXG</option>
+              <option value="Bridgestone">Bridgestone</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
             <label for="tshirtSize" class="form-label">T-Shirt Size <span class="text-danger">*</span></label>
             <select class="form-select" id="tshirtSize" required>
               <option value="" disabled selected>Select Size</option>
@@ -224,11 +259,15 @@ require_once __DIR__ . '/templates/header.php';
               <option value="XL">XL</option>
               <option value="2XL">2XL</option>
               <option value="3XL">3XL</option>
+              <option value="Oversize">Custom / Oversize</option>
             </select>
+            <div id="customTshirtContainer" class="mt-2" style="display: none;">
+              <input type="text" class="form-control" id="customTshirtSize" placeholder="Enter custom width & length (e.g. 25x32)" />
+            </div>
           </div>
-          <div class="col-md-4">
-            <label for="homeClub" class="form-label">Home Golf Club <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="homeClub" required placeholder="Club where handicap is registered" />
+          <div class="col-md-6">
+            <label for="nameOnPolo" class="form-label">Name on Polo <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="nameOnPolo" required placeholder="Name to be printed on Polo" />
           </div>
         </div>
       </div>
@@ -261,8 +300,8 @@ require_once __DIR__ . '/templates/header.php';
 
       <!-- Submit Button -->
       <div class="d-grid mt-4">
-        <button type="button" id="submitBtn" class="btn btn-gold btn-lg py-3">
-          <i class="bi bi-lock-fill"></i> Proceed to Secure Payment (<?= htmlspecialchars(EVENT_CURRENCY, ENT_QUOTES, 'UTF-8') ?> <?= number_format(CURRENT_FEE) ?>)
+        <button type="button" id="submitBtn" class="btn btn-complete-registration btn-lg py-3">
+          <i class="bi bi-lock-fill"></i> Complete Registration (<?= htmlspecialchars(EVENT_CURRENCY, ENT_QUOTES, 'UTF-8') ?> <?= number_format(CURRENT_FEE) ?>)
         </button>
       </div>
 
@@ -289,15 +328,31 @@ require_once __DIR__ . '/templates/header.php';
       }
     });
 
+    // Custom T-shirt size toggler
+    var tshirtSelect = document.getElementById('tshirtSize');
+    var customTshirtContainer = document.getElementById('customTshirtContainer');
+    var customTshirtSize = document.getElementById('customTshirtSize');
+    tshirtSelect.addEventListener('change', function () {
+      if (this.value === 'Oversize') {
+        customTshirtContainer.style.display = 'block';
+        customTshirtSize.required = true;
+      } else {
+        customTshirtContainer.style.display = 'none';
+        customTshirtSize.required = false;
+        customTshirtSize.value = '';
+      }
+    });
+
     var form = document.getElementById('regForm');
     var btn = document.getElementById('submitBtn');
     var errorBox = document.getElementById('errorBox');
+    var photoInput = document.getElementById('profilePhoto');
 
     function showError(msg) {
       errorBox.textContent = msg;
       errorBox.style.display = 'block';
       btn.disabled = false;
-      btn.innerHTML = '<i class="bi bi-lock-fill"></i> Proceed to Secure Payment';
+      btn.innerHTML = '<i class="bi bi-lock-fill"></i> Complete Registration';
       window.scrollTo({ top: errorBox.offsetTop - 20, behavior: 'smooth' });
     }
 
@@ -317,39 +372,50 @@ require_once __DIR__ . '/templates/header.php';
         return;
       }
 
+      if (photoInput.files.length === 0) {
+        showError('Please upload a profile photo.');
+        return;
+      }
+
+      var tshirtVal = tshirtSelect.value;
+      if (tshirtVal === 'Oversize' && !customTshirtSize.value.trim()) {
+        showError('Please enter your custom body width and length sizes.');
+        return;
+      }
+
       // Build submit request
       var payload = {
         csrf_token: form.querySelector('[name="csrf_token"]').value,
         registration_type: document.getElementById('registration_type').value,
         playerCategory: categorySelect.value,
-        gender: document.getElementById('gender').value,
         referenceName: document.getElementById('referenceName').value.trim(),
         referenceMission: document.getElementById('referenceMission').value.trim(),
         referenceContact: document.getElementById('referenceContact').value.trim(),
-        fullName: document.getElementById('fullName').value.trim(),
+        fullName: document.getElementById('nameTitle').value + ' ' + document.getElementById('fullName').value.trim(),
         email: document.getElementById('email').value.trim(),
         contact: document.getElementById('contact').value.trim(),
         nationality: document.getElementById('nationality').value.trim(),
         designation: document.getElementById('designation').value.trim(),
         organization: document.getElementById('organization').value.trim(),
         mailingAddress: document.getElementById('mailingAddress').value.trim(),
-        handicap: document.getElementById('handicap').value.trim(),
-        tshirtSize: document.getElementById('tshirtSize').value,
-        homeClub: document.getElementById('homeClub').value.trim(),
+        handicap: document.getElementById('handicap').value,
+        golfSetBrand: document.getElementById('golfSetBrand').value,
+        nameOnPolo: document.getElementById('nameOnPolo').value.trim(),
+        tshirtSize: tshirtVal === 'Oversize' ? 'Oversize (' + customTshirtSize.value.trim() + ')' : tshirtVal,
         scheduleGroup: teeSelected.value
       };
 
       // Loading state
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Connecting to SSLCommerz...';
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Submitting Registration...';
 
-      var bodyParams = new URLSearchParams();
-      bodyParams.append('cart_json', JSON.stringify(payload));
+      var formData = new FormData();
+      formData.append('cart_json', JSON.stringify(payload));
+      formData.append('profile_photo', photoInput.files[0]);
 
       fetch('payment/initiate.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: bodyParams.toString()
+        body: formData
       })
       .then(function (res) {
         return res.text().then(function (text) {

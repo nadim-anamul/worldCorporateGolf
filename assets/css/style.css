@@ -111,6 +111,24 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 4px 15px rgba(201, 168, 76, 0.4);
 }
 
+.btn-complete-registration {
+  background: linear-gradient(135deg, var(--green-mid) 0%, var(--green-accent) 100%);
+  color: #fff;
+  font-weight: 700;
+  border: none;
+  border-radius: 50px;
+  padding: 1rem 2.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(20, 78, 88, 0.3);
+}
+
+.btn-complete-registration:hover {
+  background: linear-gradient(135deg, var(--green-accent) 0%, var(--green-dark) 100%);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(20, 78, 88, 0.5);
+}
+
 .btn-outline-green {
   color: var(--green-mid);
   border: 2px solid var(--green-mid);

@@ -27,6 +27,97 @@ function xss($value): string {
     return htmlspecialchars(strip_tags(trim((string)$value)), ENT_QUOTES, 'UTF-8');
 }
 
+/**
+ * Optimizes an uploaded image to a web-safe JPEG with a max dimension of 600px.
+ * Falls back to direct copy if GD is unavailable or fails.
+ */
+function optimizeProfilePhoto(array $file, string $targetPath): bool {
+    $srcPath = $file['tmp_name'];
+    
+    // Check if GD library is available
+    if (!extension_loaded('gd')) {
+        return move_uploaded_file($srcPath, $targetPath);
+    }
+    
+    $info = getimagesize($srcPath);
+    if (!$info) {
+        return move_uploaded_file($srcPath, $targetPath);
+    }
+    
+    $mime = $info['mime'];
+    switch ($mime) {
+        case 'image/jpeg':
+        case 'image/jpg':
+            $srcImg = @imagecreatefromjpeg($srcPath);
+            break;
+        case 'image/png':
+            $srcImg = @imagecreatefrompng($srcPath);
+            break;
+        case 'image/gif':
+            $srcImg = @imagecreatefromgif($srcPath);
+            break;
+        case 'image/webp':
+            if (function_exists('imagecreatefromwebp')) {
+                $srcImg = @imagecreatefromwebp($srcPath);
+            } else {
+                $srcImg = false;
+            }
+            break;
+        default:
+            $srcImg = false;
+            break;
+    }
+    
+    if (!$srcImg) {
+        return move_uploaded_file($srcPath, $targetPath);
+    }
+    
+    $origWidth = imagesx($srcImg);
+    $origHeight = imagesy($srcImg);
+    
+    $maxDimension = 600;
+    $newWidth = $origWidth;
+    $newHeight = $origHeight;
+    
+    if ($origWidth > $maxDimension || $origHeight > $maxDimension) {
+        if ($origWidth > $origHeight) {
+            $newWidth = $maxDimension;
+            $newHeight = (int)round(($origHeight / $origWidth) * $maxDimension);
+        } else {
+            $newHeight = $maxDimension;
+            $newWidth = (int)round(($origWidth / $origHeight) * $maxDimension);
+        }
+    }
+    
+    $destImg = imagecreatetruecolor($newWidth, $newHeight);
+    if (!$destImg) {
+        imagedestroy($srcImg);
+        return move_uploaded_file($srcPath, $targetPath);
+    }
+    
+    // Handle PNG transparency / background
+    if ($mime === 'image/png' || $mime === 'image/gif') {
+        imagealphablending($destImg, false);
+        imagesavealpha($destImg, true);
+        $transparent = imagecolorallocatealpha($destImg, 255, 255, 255, 127);
+        imagefilledrectangle($destImg, 0, 0, $newWidth, $newHeight, $transparent);
+    }
+    
+    if (!imagecopyresampled($destImg, $srcImg, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight)) {
+        imagedestroy($srcImg);
+        imagedestroy($destImg);
+        return move_uploaded_file($srcPath, $targetPath);
+    }
+    
+    // Save as JPEG with 80% quality
+    $success = imagejpeg($destImg, $targetPath, 80);
+    
+    imagedestroy($srcImg);
+    imagedestroy($destImg);
+    
+    return $success;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     bail('Method not allowed.');
 }
@@ -49,7 +140,6 @@ $regType = xss($input['registration_type'] ?? 'golfer');
 
 // Sanitize fields
 $playerCategory   = xss($input['playerCategory']   ?? '');
-$gender           = xss($input['gender']           ?? '');
 $referenceName    = xss($input['referenceName']    ?? '');
 $referenceMission = xss($input['referenceMission'] ?? '');
 $referenceContact = xss($input['referenceContact'] ?? '');
@@ -61,16 +151,16 @@ $contact          = xss($input['contact']          ?? '');
 $email            = strtolower(trim(filter_var($input['email'] ?? '', FILTER_SANITIZE_EMAIL)));
 $mailingAddress   = xss($input['mailingAddress']   ?? '');
 $tshirtSize       = xss($input['tshirtSize']       ?? '');
-$scheduleGroup    = xss($input['scheduleGroup']    ?? ''); // tee_time_options.id or arrival_window_options_non_golfer.id
+$scheduleGroup    = xss($input['scheduleGroup']    ?? ''); // tee_time_options.id or active tee times
+$nameOnPolo       = xss($input['nameOnPolo']       ?? '');
 
 $handicap = ($regType === 'golfer') ? xss($input['handicap'] ?? '') : '';
-$homeClub = ($regType === 'golfer') ? xss($input['homeClub'] ?? '') : '';
+$golfSetBrand = ($regType === 'golfer') ? xss($input['golfSetBrand'] ?? '') : '';
 $puttingContest = ($regType === 'non_golfer') ? xss($input['puttingContestInterest'] ?? '') : '';
 
 // Validation
 $required = [
     'Player Category' => $playerCategory,
-    'Gender'          => $gender,
     'Full Name'       => $fullName,
     'Designation'     => $designation,
     'Organization'    => $organization,
@@ -78,12 +168,13 @@ $required = [
     'Contact'         => $contact,
     'Email'           => $email,
     'T-Shirt Size'    => $tshirtSize,
-    'Schedule Group'  => $scheduleGroup
+    'Schedule Group'  => $scheduleGroup,
+    'Name on Polo'    => $nameOnPolo
 ];
 
 if ($regType === 'golfer') {
     $required['Handicap'] = $handicap;
-    $required['Home Club'] = $homeClub;
+    $required['Golf Set Brand'] = $golfSetBrand;
 } else {
     $required['Putting Contest Interest'] = $puttingContest;
 }
@@ -96,6 +187,19 @@ foreach ($required as $label => $val) {
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     bail('Invalid email address.');
+}
+
+// Profile photo upload validation
+if (!isset($_FILES['profile_photo']) || $_FILES['profile_photo']['error'] !== UPLOAD_ERR_OK) {
+    bail('Please upload a profile photo.');
+}
+$file = $_FILES['profile_photo'];
+$allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+if (!in_array($file['type'], $allowedTypes)) {
+    bail('Invalid profile photo file type. Please upload a JPG, PNG, GIF, or WebP image.');
+}
+if ($file['size'] > 5 * 1024 * 1024) {
+    bail('Profile photo is too large. Max file size is 5MB.');
 }
 
 // Connect & check capacity & duplicates
@@ -167,27 +271,40 @@ $now = date('Y-m-d H:i:s');
 $amount = (float)CURRENT_FEE;
 $currency = EVENT_CURRENCY;
 
+// Process and save optimized profile picture
+$uploadDir = dirname(__DIR__) . '/uploads/profile_pics/';
+if (!is_dir($uploadDir)) {
+    mkdir($uploadDir, 0755, true);
+}
+$fileName = $uniqueId . '.jpg';
+$targetPath = $uploadDir . $fileName;
+$relativeWebPath = 'uploads/profile_pics/' . $fileName;
+
+if (!optimizeProfilePhoto($file, $targetPath)) {
+    bail('Failed to save and optimize profile photo.');
+}
+
 // MySQL persistence
 if ($dbOk) {
     try {
         if ($regType === 'golfer') {
             $stmt = $pdo->prepare(
                 'INSERT INTO registrations 
-                   (tournament_id, unique_id, tran_id, full_name, designation, organization, nationality, gender, contact, email, mailing_address, handicap, tshirt_size, home_club, schedule_group, player_category, reference_name, reference_mission, reference_contact, payment_status, amount, currency, submitted_at) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                   (tournament_id, unique_id, tran_id, full_name, designation, organization, nationality, gender, profile_photo, name_on_polo, golf_set_brand, contact, email, mailing_address, handicap, tshirt_size, home_club, schedule_group, player_category, reference_name, reference_mission, reference_contact, payment_status, amount, currency, submitted_at) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
             );
             $stmt->execute([
-                ACTIVE_TOURNAMENT_ID, $uniqueId, $tranId, $fullName, $designation, $organization, $nationality, $gender, $contact, $email, $mailingAddress, $handicap, $tshirtSize, $homeClub, $scheduleGroup, $playerCategory,
+                ACTIVE_TOURNAMENT_ID, $uniqueId, $tranId, $fullName, $designation, $organization, $nationality, null, $relativeWebPath, $nameOnPolo, $golfSetBrand, $contact, $email, $mailingAddress, $handicap, $tshirtSize, null, $scheduleGroup, $playerCategory,
                 $referenceName ?: null, $referenceMission ?: null, $referenceContact ?: null, 'pending', $amount, $currency, $now
             ]);
         } else {
             $stmt = $pdo->prepare(
                 'INSERT INTO registrations_non_golfer 
-                   (tournament_id, unique_id, tran_id, full_name, designation, organization, nationality, gender, contact, email, mailing_address, tshirt_size, arrival_window, putting_contest_interest, player_category, reference_name, reference_mission, reference_contact, payment_status, amount, currency, submitted_at) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                   (tournament_id, unique_id, tran_id, full_name, designation, organization, nationality, gender, profile_photo, name_on_polo, contact, email, mailing_address, tshirt_size, arrival_window, putting_contest_interest, player_category, reference_name, reference_mission, reference_contact, payment_status, amount, currency, submitted_at) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
             );
             $stmt->execute([
-                ACTIVE_TOURNAMENT_ID, $uniqueId, $tranId, $fullName, $designation, $organization, $nationality, $gender, $contact, $email, $mailingAddress, $tshirtSize, $scheduleGroup, $puttingContest, $playerCategory,
+                ACTIVE_TOURNAMENT_ID, $uniqueId, $tranId, $fullName, $designation, $organization, $nationality, null, $relativeWebPath, $nameOnPolo, $contact, $email, $mailingAddress, $tshirtSize, $scheduleGroup, $puttingContest, $playerCategory,
                 $referenceName ?: null, $referenceMission ?: null, $referenceContact ?: null, 'pending', $amount, $currency, $now
             ]);
         }
@@ -215,12 +332,14 @@ if (is_writable(dirname($jsonFile))) {
         'registration_type' => $regType,
         'submitted_at' => $now,
         'amount' => $amount,
-        'currency' => $currency
+        'currency' => $currency,
+        'profile_photo' => $relativeWebPath,
+        'name_on_polo' => $nameOnPolo
     ];
     if ($regType === 'golfer') {
         $record['schedule_group'] = $scheduleGroup;
         $record['handicap'] = $handicap;
-        $record['home_club'] = $homeClub;
+        $record['golf_set_brand'] = $golfSetBrand;
     } else {
         $record['arrival_window'] = $scheduleGroup;
         $record['putting_contest_interest'] = $puttingContest;
