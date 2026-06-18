@@ -106,6 +106,20 @@ require_once __DIR__ . '/templates/header.php';
       </a>
     </div>
 
+    <!-- Early Bird Announcement Alert -->
+    <?php if (IS_EARLY_BIRD_ACTIVE): ?>
+      <div class="alert p-3 mb-4 d-flex align-items-center gap-3 border-0 shadow-sm" style="background: linear-gradient(135deg, #fef9c3 0%, #fef3c7 100%); border-left: 5px solid #d97706 !important; border-radius: 0.75rem;">
+        <i class="bi bi-gift-fill text-warning fs-3 flex-shrink-0"></i>
+        <div>
+          <strong class="text-warning-emphasis d-block mb-1" style="font-size: 1.05rem;"><i class="bi bi-stars"></i> Early Bird Discount Active!</strong>
+          <span class="text-muted d-block small mb-2">You get a special discount rate of <strong><?= htmlspecialchars(EVENT_CURRENCY, ENT_QUOTES, 'UTF-8') ?> <?= number_format(CURRENT_FEE) ?></strong> (instead of the standard <?= htmlspecialchars(EVENT_CURRENCY, ENT_QUOTES, 'UTF-8') ?> <?= number_format(EVENT_FEE) ?>).</span>
+          <span class="d-inline-flex align-items-center gap-2 badge bg-dark text-warning font-monospace py-1.5 px-3 rounded-pill" style="font-size: 0.82rem;">
+            <i class="bi bi-clock"></i> Ends in: <span id="earlyBirdFormCountdown">00d 00h 00m 00s</span>
+          </span>
+        </div>
+      </div>
+    <?php endif; ?>
+
     <!-- Error Box -->
     <div id="errorBox" class="alert alert-danger" style="display: none;"></div>
 
@@ -239,7 +253,7 @@ require_once __DIR__ . '/templates/header.php';
       <!-- Submit Button -->
       <div class="d-grid mt-4">
         <button type="button" id="submitBtn" class="btn btn-gold btn-lg py-3">
-          <i class="bi bi-lock-fill"></i> Proceed to Secure Payment (<?= htmlspecialchars(EVENT_CURRENCY, ENT_QUOTES, 'UTF-8') ?> <?= number_format(EVENT_FEE) ?>)
+          <i class="bi bi-lock-fill"></i> Proceed to Secure Payment (<?= htmlspecialchars(EVENT_CURRENCY, ENT_QUOTES, 'UTF-8') ?> <?= number_format(CURRENT_FEE) ?>)
         </button>
       </div>
 
@@ -352,6 +366,38 @@ require_once __DIR__ . '/templates/header.php';
 
   })();
 </script>
+
+<?php if (IS_EARLY_BIRD_ACTIVE && EARLY_BIRD_DEADLINE): ?>
+<script>
+  (function () {
+    const deadline = new Date("<?= date('c', strtotime(EARLY_BIRD_DEADLINE)) ?>").getTime();
+    const $timer = document.getElementById('earlyBirdFormCountdown');
+    if (!$timer) return;
+
+    function update() {
+      const now = new Date().getTime();
+      const diff = deadline - now;
+
+      if (diff <= 0) {
+        $timer.textContent = "Expired";
+        setTimeout(() => location.reload(), 2000);
+        return;
+      }
+
+      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+      const pad = (num) => String(num).padStart(2, '0');
+      $timer.textContent = `${pad(d)}d ${pad(h)}h ${pad(m)}m ${pad(s)}s`;
+    }
+
+    update();
+    setInterval(update, 1000);
+  })();
+</script>
+<?php endif; ?>
 
 <?php
 require_once __DIR__ . '/templates/footer.php';

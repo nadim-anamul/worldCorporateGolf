@@ -5,19 +5,21 @@
 
 -- 1. Tournaments Configuration table
 CREATE TABLE IF NOT EXISTS `tournaments` (
-    `id`              INT           AUTO_INCREMENT PRIMARY KEY,
-    `name`            VARCHAR(255)  NOT NULL,
-    `date`            VARCHAR(100)  NOT NULL,
-    `venue`           VARCHAR(255)  NOT NULL,
-    `format`          VARCHAR(255)  NOT NULL,
-    `fee`             DECIMAL(10,2) NOT NULL DEFAULT 2000.00,
-    `currency`        VARCHAR(10)   NOT NULL DEFAULT 'BDT',
-    `deadline`        VARCHAR(120)  NOT NULL,
-    `contact_phone_1` VARCHAR(50)   DEFAULT NULL,
-    `contact_phone_2` VARCHAR(50)   DEFAULT NULL,
-    `is_active`       TINYINT(1)    NOT NULL DEFAULT 0,
-    `created_at`      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at`      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    `id`                  INT           AUTO_INCREMENT PRIMARY KEY,
+    `name`                VARCHAR(255)  NOT NULL,
+    `date`                VARCHAR(100)  NOT NULL,
+    `venue`               VARCHAR(255)  NOT NULL,
+    `format`              VARCHAR(255)  NOT NULL,
+    `fee`                 DECIMAL(10,2) NOT NULL DEFAULT 2000.00,
+    `early_bird_fee`      DECIMAL(10,2) DEFAULT NULL,
+    `currency`            VARCHAR(10)   NOT NULL DEFAULT 'BDT',
+    `deadline`            VARCHAR(120)  NOT NULL,
+    `early_bird_deadline` DATETIME      DEFAULT NULL,
+    `contact_phone_1`     VARCHAR(50)   DEFAULT NULL,
+    `contact_phone_2`     VARCHAR(50)   DEFAULT NULL,
+    `is_active`           TINYINT(1)    NOT NULL DEFAULT 0,
+    `created_at`          TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`          TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 2. Golfer registrations table

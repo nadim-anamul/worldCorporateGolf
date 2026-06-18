@@ -53,6 +53,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $phone2 = trim((string)($_POST['contact_phone_2'] ?? ''));
         $id = (int)($_POST['id'] ?? 0);
 
+        // Fetch early bird configurations
+        $ebFeeRaw = trim((string)($_POST['early_bird_fee'] ?? ''));
+        $ebFee = ($ebFeeRaw !== '') ? (float)$ebFeeRaw : null;
+        $ebDeadlineRaw = trim((string)($_POST['early_bird_deadline'] ?? ''));
+        $ebDeadline = null;
+        if ($ebDeadlineRaw !== '') {
+            $ebDeadline = date('Y-m-d H:i:s', strtotime($ebDeadlineRaw));
+        }
+
         if ($name === '' || $date === '' || $venue === '' || $format === '' || $deadline === '') {
             $errors[] = 'Tournament name, date, venue, format, and registration deadline are required.';
         }
@@ -61,22 +70,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Registration fee cannot be negative.';
         }
 
+        if ($ebFee !== null && $ebFee < 0) {
+            $errors[] = 'Early bird fee cannot be negative.';
+        }
+
+        if (($ebFee !== null && $ebDeadline === null) || ($ebFee === null && $ebDeadline !== null)) {
+            $errors[] = 'Both early bird fee and deadline must be set, or both left blank.';
+        }
+
         if (empty($errors)) {
             try {
                 if ($action === 'create') {
                     $stmt = $pdo->prepare(
-                        "INSERT INTO tournaments (name, date, venue, format, fee, currency, deadline, contact_phone_1, contact_phone_2, is_active)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)"
+                        "INSERT INTO tournaments (name, date, venue, format, fee, early_bird_fee, currency, deadline, early_bird_deadline, contact_phone_1, contact_phone_2, is_active)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)"
                     );
-                    $stmt->execute([$name, $date, $venue, $format, $fee, $currency, $deadline, $phone1 ?: null, $phone2 ?: null]);
+                    $stmt->execute([$name, $date, $venue, $format, $fee, $ebFee, $currency, $deadline, $ebDeadline, $phone1 ?: null, $phone2 ?: null]);
                     $success = 'Tournament created successfully.';
                 } else {
                     $stmt = $pdo->prepare(
                         "UPDATE tournaments 
-                         SET name = ?, date = ?, venue = ?, format = ?, fee = ?, currency = ?, deadline = ?, contact_phone_1 = ?, contact_phone_2 = ?
+                         SET name = ?, date = ?, venue = ?, format = ?, fee = ?, early_bird_fee = ?, currency = ?, deadline = ?, early_bird_deadline = ?, contact_phone_1 = ?, contact_phone_2 = ?
                          WHERE id = ?"
                     );
-                    $stmt->execute([$name, $date, $venue, $format, $fee, $currency, $deadline, $phone1 ?: null, $phone2 ?: null, $id]);
+                    $stmt->execute([$name, $date, $venue, $format, $fee, $ebFee, $currency, $deadline, $ebDeadline, $phone1 ?: null, $phone2 ?: null, $id]);
                     $success = 'Tournament updated successfully.';
                 }
             } catch (Throwable $e) {
@@ -330,6 +347,14 @@ if (empty($_SESSION['csrf_token'])) {
                     </td>
                     <td>
                       <strong><?= esc($t['currency']) ?> <?= number_format((float)$t['fee'], 0) ?></strong>
+                      <?php if ($t['early_bird_fee'] !== null): ?>
+                        <span class="d-block text-success small mt-1" style="font-size: 0.72rem; font-weight: 550;">
+                          <i class="bi bi-lightning-charge-fill me-0.5"></i> Early Bird: <?= esc($t['currency']) ?> <?= number_format((float)$t['early_bird_fee'], 0) ?>
+                        </span>
+                        <span class="d-block text-muted small" style="font-size: 0.72rem;">
+                          <i class="bi bi-clock me-0.5"></i> Ends: <?= esc(substr((string)$t['early_bird_deadline'], 0, 16)) ?>
+                        </span>
+                      <?php endif; ?>
                     </td>
                     <td>
                       <span class="badge bg-primary rounded-pill text-white me-1" title="Paid Golfers">Golfers: <?= $gCount ?></span>
@@ -417,6 +442,17 @@ if (empty($_SESSION['csrf_token'])) {
               <div class="col-sm-4">
                 <label for="currency" class="form-label fw-semibold">Currency</label>
                 <input type="text" class="form-control form-control-sm" id="currency" name="currency" required placeholder="BDT" value="<?= esc($editTournament['currency'] ?? 'BDT') ?>" />
+              </div>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-sm-6">
+                <label for="early_bird_fee" class="form-label fw-semibold">Early Bird Fee</label>
+                <input type="number" step="0.01" class="form-control form-control-sm" id="early_bird_fee" name="early_bird_fee" placeholder="e.g. 1500.00" value="<?= esc($editTournament['early_bird_fee'] ?? '') ?>" />
+              </div>
+              <div class="col-sm-6">
+                <label for="early_bird_deadline" class="form-label fw-semibold">Early Bird Deadline</label>
+                <input type="datetime-local" class="form-control form-control-sm" id="early_bird_deadline" name="early_bird_deadline" value="<?= isset($editTournament['early_bird_deadline']) ? date('Y-m-d\TH:i', strtotime($editTournament['early_bird_deadline'])) : '' ?>" />
               </div>
             </div>
 

@@ -164,7 +164,7 @@ try {
 $uniqueId = bin2hex(random_bytes(16));
 $tranId = 'WCC-' . strtoupper(substr($uniqueId, 0, 24));
 $now = date('Y-m-d H:i:s');
-$amount = (float)EVENT_FEE;
+$amount = (float)CURRENT_FEE;
 $currency = EVENT_CURRENCY;
 
 // MySQL persistence

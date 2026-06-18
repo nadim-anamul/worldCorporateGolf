@@ -257,6 +257,15 @@ require_once __DIR__ . '/config/config.php';
 </head>
 <body>
 
+<?php if (IS_EARLY_BIRD_ACTIVE): ?>
+  <div class="early-bird-banner py-2 px-3 text-center position-sticky top-0 w-100 shadow-sm" style="z-index: 1050; background: linear-gradient(90deg, #c9a84c 0%, #d4b45d 50%, #c9a84c 100%); color: #fff; font-weight: 600; font-size: 0.93rem; border-bottom: 2px solid #b2933d;">
+    <div class="container d-flex flex-wrap align-items-center justify-content-center gap-2">
+      <span><i class="bi bi-lightning-charge-fill text-warning"></i> <strong>Early Bird Offer Active!</strong> Save BDT <?= number_format(EVENT_FEE - EARLY_BIRD_FEE) ?>/- by registering now. Offer ends in:</span>
+      <span id="earlyBirdCountdown" class="badge bg-dark px-3 py-1.5 font-monospace text-warning fs-6" style="letter-spacing: 0.05em;">00d 00h 00m 00s</span>
+    </div>
+  </div>
+<?php endif; ?>
+
 <!-- ══════════════════════  HERO  ══════════════════════ -->
 <section class="hero">
   <div class="container position-relative">
@@ -384,7 +393,11 @@ require_once __DIR__ . '/config/config.php';
         <h3 class="fw-bold mb-2 text-uppercase" style="color:var(--green-dark);">Confirm your slot now</h3>
         <p class="text-muted mb-4">
           Slots are limited. Registration closes on <strong><?= htmlspecialchars(EVENT_DEADLINE, ENT_QUOTES, 'UTF-8') ?> (or until slots are filled). </strong>
-          A participant contribution of BDT <?= number_format(EVENT_FEE) ?>/- will be processed securely via SSLCommerz.
+          <?php if (IS_EARLY_BIRD_ACTIVE): ?>
+            A participant contribution of <span class="text-decoration-line-through text-danger">BDT <?= number_format(EVENT_FEE) ?></span> <strong class="text-success fs-5">BDT <?= number_format(CURRENT_FEE) ?>/- (Early Bird Rate)</strong> will be processed securely via SSLCommerz.
+          <?php else: ?>
+            A participant contribution of BDT <?= number_format(EVENT_FEE) ?>/- will be processed securely via SSLCommerz.
+          <?php endif; ?>
         </p>
         <a href="#" class="btn-register btn-lg" data-bs-toggle="modal" data-bs-target="#registrationTypeModal">
           <i class="bi bi-person-plus-fill"></i>&nbsp; Register Now
@@ -507,5 +520,37 @@ require_once __DIR__ . '/config/config.php';
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<?php if (IS_EARLY_BIRD_ACTIVE && EARLY_BIRD_DEADLINE): ?>
+<script>
+(function () {
+  const deadline = new Date("<?= date('c', strtotime(EARLY_BIRD_DEADLINE)) ?>").getTime();
+  const $timer = document.getElementById('earlyBirdCountdown');
+  if (!$timer) return;
+
+  function update() {
+    const now = new Date().getTime();
+    const diff = deadline - now;
+
+    if (diff <= 0) {
+      $timer.textContent = "Expired";
+      setTimeout(() => location.reload(), 2000);
+      return;
+    }
+
+    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+    const pad = (num) => String(num).padStart(2, '0');
+    $timer.textContent = `${pad(d)}d ${pad(h)}h ${pad(m)}m ${pad(s)}s`;
+  }
+
+  update();
+  setInterval(update, 1000);
+})();
+</script>
+<?php endif; ?>
 </body>
 </html>

@@ -85,6 +85,32 @@ _def('EVENT_CURRENCY', $activeTournament['currency'] ?? $_env['EVENT_CURRENCY'] 
 _def('CONTACT_PHONE_1', $activeTournament['contact_phone_1'] ?? $_env['CONTACT_PHONE_1'] ?? '');
 _def('CONTACT_PHONE_2', $activeTournament['contact_phone_2'] ?? $_env['CONTACT_PHONE_2'] ?? '');
 
+// Early Bird Configuration
+$_ebFee = null;
+$_ebDeadline = null;
+if ($activeTournament) {
+    $_ebFee = $activeTournament['early_bird_fee'] !== null ? (float)$activeTournament['early_bird_fee'] : null;
+    $_ebDeadline = $activeTournament['early_bird_deadline'] ?? null;
+} else {
+    $_ebFee = isset($_env['EARLY_BIRD_FEE']) ? (float)$_env['EARLY_BIRD_FEE'] : null;
+    $_ebDeadline = $_env['EARLY_BIRD_DEADLINE'] ?? null;
+}
+
+$_ebActive = false;
+if ($_ebFee !== null && $_ebDeadline !== null) {
+    $_deadlineTime = strtotime($_ebDeadline);
+    if ($_deadlineTime !== false && time() < $_deadlineTime) {
+        $_ebActive = true;
+    }
+}
+
+_def('EARLY_BIRD_FEE', $_ebFee);
+_def('EARLY_BIRD_DEADLINE', $_ebDeadline);
+_def('IS_EARLY_BIRD_ACTIVE', $_ebActive);
+_def('CURRENT_FEE', $_ebActive ? $_ebFee : EVENT_FEE);
+
+unset($_ebFee, $_ebDeadline, $_ebActive, $_deadlineTime);
+
 // SSL Commerz Settings
 _def('SSL_STORE_ID', $_env['SSL_STORE_ID'] ?? '');
 _def('SSL_STORE_PASSWORD', $_env['SSL_STORE_PASSWORD'] ?? '');
