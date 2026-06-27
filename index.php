@@ -21,6 +21,7 @@ require_once __DIR__ . '/config/config.php';
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <link href="<?= htmlspecialchars(APP_BASE_URL . '/assets/css/style.css', ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <style>
     :root {
       --green-dark:  #0d3640;
@@ -28,47 +29,6 @@ require_once __DIR__ . '/config/config.php';
       --green-light: #e4f0f2;
       --gold:        #c9a84c;
       --text-dark:   #1a1a1a;
-    }
-
-    /* ── Early Bird Banner ────────────────────────────────────────────────── */
-    .early-bird-banner {
-      background: rgba(13, 54, 64, 0.98);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      color: #fff;
-      font-weight: 550;
-      border-bottom: 2.5px solid var(--gold);
-      z-index: 1050;
-      transition: all 0.3s ease;
-      font-size: 0.91rem;
-    }
-    .early-bird-banner strong {
-      color: var(--gold);
-    }
-    .countdown-badge {
-      letter-spacing: 0.06em;
-      background: rgba(201, 168, 76, 0.15);
-      color: #ffd666;
-      border: 1px solid var(--gold);
-      font-weight: 700;
-      box-shadow: 0 0 10px rgba(201, 168, 76, 0.15);
-      border-radius: 50px;
-      padding: 0.35rem 1rem !important;
-      display: inline-block;
-    }
-    .animate-pulse-slow {
-      animation: pulse-glow 2.5s infinite ease-in-out;
-    }
-    @keyframes pulse-glow {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.82; }
-    }
-    .animate-pulse-slow--icon {
-      animation: pulse-icon 2.5s infinite ease-in-out;
-    }
-    @keyframes pulse-icon {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.08); opacity: 0.9; }
     }
 
     /* ── Hero ────────────────────────────────────────────────────────────── */
@@ -95,6 +55,7 @@ require_once __DIR__ . '/config/config.php';
       margin-top: 1.25rem;
       position: relative;
       z-index: 2;
+      color: #fff;
     }
     .hero-subtitle {
       font-size: clamp(.95rem, 2.5vw, 1.15rem);
@@ -344,11 +305,16 @@ require_once __DIR__ . '/config/config.php';
 
     /* ── Partner Ticker ─────────────────────────────────────────────────── */
     .partner-section {
-      background: #f8fafc;
+      background: linear-gradient(180deg, #eef6f7 0%, #e4f0f2 100%);
       padding: 3.5rem 0;
       overflow: hidden;
-      border-top: 1px solid #e2e8f0;
-      border-bottom: 1px solid #e2e8f0;
+      border-top: 1px solid #c5dde0;
+      border-bottom: 1px solid #c5dde0;
+    }
+    .partner-section__heading {
+      color: var(--green-dark);
+      letter-spacing: 0.05em;
+      font-size: 0.95rem;
     }
     .marquee-container {
       display: flex;
@@ -370,8 +336,8 @@ require_once __DIR__ . '/config/config.php';
     .partner-logo-link {
       display: block;
       transition: transform 0.25s ease, filter 0.25s ease, opacity 0.25s ease;
-      filter: grayscale(100%);
-      opacity: 0.5;
+      filter: grayscale(70%);
+      opacity: 0.7;
     }
     .partner-logo-link:hover {
       filter: grayscale(0%);
@@ -388,7 +354,40 @@ require_once __DIR__ . '/config/config.php';
       100% { transform: translateX(-50%); }
     }
 
+    .registration-options__lead {
+      max-width: 600px;
+      font-size: 0.95rem;
+      line-height: 1.55;
+    }
+    .registration-options__promo {
+      max-width: 36rem;
+      margin: 0.75rem auto 0;
+    }
+
     @media (max-width: 768px) {
+      .container--landing {
+        padding-left: 0.65rem;
+        padding-right: 0.65rem;
+      }
+
+      .hero {
+        padding: 3rem 0.65rem 2.5rem;
+      }
+      .hero-title {
+        font-size: clamp(1.25rem, 5.5vw, 1.75rem);
+        margin-top: 0.5rem;
+      }
+      .deadline-chip {
+        font-size: 0.78rem;
+        padding: 0.35rem 0.6rem;
+        line-height: 1.4;
+        max-width: 100%;
+      }
+      .btn-register.btn-lg {
+        font-size: 0.95rem;
+        padding: 0.65rem 1.75rem;
+      }
+
       .section-title {
         font-size: 1rem;
       }
@@ -397,71 +396,129 @@ require_once __DIR__ . '/config/config.php';
         border-left: none;
         padding-left: 0;
       }
-    }
 
-    .early-bird-banner__inner {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      text-align: center;
-    }
-    @media (min-width: 576px) {
-      .early-bird-banner__inner {
-        flex-direction: row;
-        flex-wrap: wrap;
+      section.py-5 {
+        padding-top: 2.25rem !important;
+        padding-bottom: 2.25rem !important;
+      }
+
+      .info-card .card-body {
+        padding: 1.1rem 0.85rem;
+      }
+      .info-icon {
+        font-size: 1.65rem;
+      }
+
+      .activities-rules-row {
+        --bs-gutter-y: 1.75rem;
+      }
+      .activity-item {
+        font-size: 0.88rem;
+        padding: 0.5rem 0;
+      }
+      .rules-list li {
+        font-size: 0.86rem;
+      }
+
+      .registration-options-section {
+        padding-top: 1.75rem !important;
+        padding-bottom: 1.75rem !important;
+      }
+      .registration-options__intro {
+        margin-bottom: 1.15rem !important;
+      }
+      .registration-options__title {
+        font-size: 0.95rem;
+        letter-spacing: 0.02em;
+        line-height: 1.35;
+        margin-bottom: 0.5rem !important;
+      }
+      .registration-options__lead {
+        font-size: 0.84rem;
+        line-height: 1.5;
+        margin-bottom: 0 !important;
+        padding: 0;
+      }
+      .registration-options__promo {
+        max-width: 100%;
+        margin-top: 0.65rem;
+      }
+      .registration-options-section .row {
+        --bs-gutter-y: 0.85rem;
+      }
+      .reg-option-card .card-body {
+        padding: 1.1rem 0.9rem !important;
+      }
+      .reg-option-card h4 {
+        font-size: 1.05rem;
+      }
+      .reg-option-card p.small {
+        font-size: 0.82rem !important;
+        margin-bottom: 0.85rem !important;
+      }
+      .option-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 1.6rem;
+        margin-bottom: 0.65rem !important;
+      }
+      .btn-register-card,
+      .btn-register-card-secondary {
+        font-size: 0.9rem;
+        padding-top: 0.55rem !important;
+        padding-bottom: 0.55rem !important;
+      }
+
+      .about-card-logo {
+        min-height: 110px;
+        padding: 1rem;
+      }
+      .about-card-logo img {
+        max-height: 72px;
+      }
+      .about-card-body {
+        padding: 0.9rem 1rem 1.1rem;
+      }
+
+      .contact-chip {
+        font-size: 0.84rem;
+        padding: 0.4rem 0.9rem;
+      }
+      .partner-section {
+        padding: 2rem 0;
+      }
+      .marquee-content {
+        gap: 2.5rem;
+      }
+      .partner-logo-link img {
+        max-height: 36px;
+        max-width: 120px;
       }
     }
-    .early-bird-banner__text {
-      line-height: 1.45;
-      font-size: clamp(0.78rem, 2.8vw, 0.91rem);
+
+    .animate-pulse-slow {
+      animation: pulse-glow 2.5s infinite ease-in-out;
     }
-    .early-bird-pricing-wrap {
-      width: 100%;
-      margin-top: 1rem;
-      padding: 0 0.5rem 0.25rem;
-    }
-    .early-bird-pricing-badge {
-      display: block;
-      width: fit-content;
-      max-width: 100%;
-      margin: 0 auto;
-      white-space: normal;
-      line-height: 1.45;
-      font-size: clamp(0.82rem, 2.8vw, 1rem) !important;
-      padding: 0.65rem 1rem !important;
-      box-sizing: border-box;
-      transform: none !important;
-    }
-    .early-bird-pricing-badge.animate-pulse-slow {
-      animation: pulse-badge 2.5s infinite ease-in-out;
-    }
-    @keyframes pulse-badge {
+    @keyframes pulse-glow {
       0%, 100% { opacity: 1; }
-      50% { opacity: 0.88; }
+      50% { opacity: 0.82; }
     }
   </style>
 </head>
 <body>
 
 <?php if (IS_EARLY_BIRD_ACTIVE): ?>
-  <div class="early-bird-banner py-2.5 px-3 text-center position-sticky top-0 w-100 shadow-sm">
-    <div class="container">
-      <div class="early-bird-banner__inner">
-        <span class="early-bird-banner__text d-inline-flex align-items-center flex-wrap justify-content-center">
-          <i class="bi bi-lightning-charge-fill text-warning fs-6 me-1.5 animate-pulse-slow--icon"></i>
-          <strong>Early Bird Offer Active!</strong>&nbsp;Save BDT <?= number_format(EVENT_FEE - EARLY_BIRD_FEE) ?>/- by registering now. Offer ends in:
-        </span>
-        <span id="earlyBirdCountdown" class="countdown-badge font-monospace text-warning fs-6">00d 00h 00m 00s</span>
-      </div>
-    </div>
+  <div class="early-bird-bar-shell">
+    <?php
+      $countdownId = 'earlyBirdCountdown';
+      require __DIR__ . '/templates/_early_bird_bar.php';
+    ?>
   </div>
 <?php endif; ?>
 
 <!-- ══════════════════════  HERO  ══════════════════════ -->
 <section class="hero">
-  <div class="container position-relative">
+  <div class="container container--landing position-relative">
     <h1 class="hero-title"><?= htmlspecialchars(EVENT_NAME, ENT_QUOTES, 'UTF-8') ?></h1>
     <div class="mt-3">
       <span class="deadline-chip"><i class="bi bi-clock"></i>&nbsp; Registration Deadline: <?= htmlspecialchars(EVENT_DEADLINE, ENT_QUOTES, 'UTF-8') ?> (or until slots are filled)</span>
@@ -476,7 +533,7 @@ require_once __DIR__ . '/config/config.php';
 
 <!-- ══════════════════════  EVENT INFO  ══════════════════════ -->
 <section class="py-5 bg-white">
-  <div class="container">
+  <div class="container container--landing">
     <h2 class="section-title section-title--event-info"><i class="bi bi-info-circle"></i>&nbsp; Event Information</h2>
     <div class="row g-4">
 
@@ -539,8 +596,8 @@ require_once __DIR__ . '/config/config.php';
 
 <!-- ══════════════════════  ACTIVITIES  ══════════════════════ -->
 <section class="py-5 bg-white border-top">
-  <div class="container">
-    <div class="row g-5">
+  <div class="container container--landing">
+    <div class="row g-5 activities-rules-row">
 
       <div class="col-md-6">
         <h2 class="section-title"><i class="bi bi-stars"></i>&nbsp; Activities</h2>
@@ -573,27 +630,27 @@ require_once __DIR__ . '/config/config.php';
 </section>
 
 <!-- ══════════════════════  REGISTRATION OPTIONS  ══════════════════════ -->
-<section id="registration-options" class="py-5" style="background:var(--green-light);">
-  <div class="container">
+<section id="registration-options" class="registration-options-section py-5" style="background:var(--green-light);">
+  <div class="container container--landing">
     
-    <div class="text-center mb-5">
-      <h2 class="fw-bold mb-2 text-uppercase" style="color:var(--green-dark);">Choose Your Registration Type</h2>
-      <p class="text-muted mx-auto" style="max-width: 600px;">
+    <div class="registration-options__intro text-center">
+      <h2 class="registration-options__title fw-bold mb-2 text-uppercase" style="color:var(--green-dark);">Choose Your Registration Type</h2>
+      <p class="registration-options__lead text-muted mx-auto">
         Registration closes on <strong><?= htmlspecialchars(EVENT_DEADLINE, ENT_QUOTES, 'UTF-8') ?></strong> (or until slots are filled). 
         A participant contribution will be processed securely via SSLCommerz.
       </p>
       
       <?php if (IS_EARLY_BIRD_ACTIVE): ?>
-        <div class="early-bird-pricing-wrap">
-          <div class="badge bg-warning text-dark early-bird-pricing-badge rounded-pill shadow-sm animate-pulse-slow">
-            <i class="bi bi-gift-fill me-1"></i> Early Bird Discount Active: BDT <?= number_format(CURRENT_FEE) ?> (Standard BDT <?= number_format(EVENT_FEE) ?>)
-          </div>
+        <div class="registration-options__promo">
+          <?php
+            $promoVariant = 'section';
+            $countdownId = 'earlyBirdSectionCountdown';
+            require __DIR__ . '/templates/_early_bird_promo.php';
+          ?>
         </div>
       <?php else: ?>
         <div class="early-bird-pricing-wrap">
-          <div class="badge bg-secondary text-white early-bird-pricing-badge rounded-pill shadow-sm">
-            Participant Contribution: BDT <?= number_format(EVENT_FEE) ?>
-          </div>
+          <?php $pricingVariant = 'default'; require __DIR__ . '/templates/_event_pricing.php'; ?>
         </div>
       <?php endif; ?>
     </div>
@@ -641,7 +698,7 @@ require_once __DIR__ . '/config/config.php';
 
 <!-- ══════════════════════  ABOUT  ══════════════════════ -->
 <section class="py-5 bg-white">
-  <div class="container">
+  <div class="container container--landing">
     <h2 class="section-title"><i class="bi bi-building"></i>&nbsp; About Us</h2>
     <div class="row g-4">
 
@@ -689,7 +746,7 @@ require_once __DIR__ . '/config/config.php';
 
 <!-- ══════════════════════  CONTACT  ══════════════════════ -->
 <section class="contact-section py-4">
-  <div class="container text-center">
+  <div class="container container--landing text-center">
     <p class="fw-semibold mb-3" style="color:var(--green-dark); font-size:1rem;">
       <i class="bi bi-headset"></i>&nbsp; Contact — Relationship Officer
     </p>
@@ -714,7 +771,7 @@ require_once __DIR__ . '/config/config.php';
 <!-- ══════════════════════  PARTNERS  ══════════════════════ -->
 <section class="partner-section">
   <div class="container text-center mb-4">
-    <h5 class="fw-bold text-uppercase mb-0" style="color:var(--green-dark); letter-spacing: 0.05em; font-size: 0.95rem;"><i class="bi bi-shield-check me-1 text-gold"></i> Event Partners &amp; Sponsors</h5>
+    <h5 class="fw-bold text-uppercase mb-0 partner-section__heading"><i class="bi bi-shield-check me-1 text-gold"></i> Event Partners &amp; Sponsors</h5>
   </div>
   <div class="marquee-container">
     <div class="marquee-content">
@@ -776,15 +833,15 @@ require_once __DIR__ . '/config/config.php';
 <script>
 (function () {
   const deadline = new Date("<?= date('c', strtotime(EARLY_BIRD_DEADLINE)) ?>").getTime();
-  const $timer = document.getElementById('earlyBirdCountdown');
-  if (!$timer) return;
+  const timers = document.querySelectorAll('[data-early-bird-countdown]');
+  if (!timers.length) return;
 
   function update() {
     const now = new Date().getTime();
     const diff = deadline - now;
 
     if (diff <= 0) {
-      $timer.textContent = "Expired";
+      timers.forEach((timer) => { timer.textContent = 'Expired'; });
       setTimeout(() => location.reload(), 2000);
       return;
     }
@@ -793,9 +850,9 @@ require_once __DIR__ . '/config/config.php';
     const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     const s = Math.floor((diff % (1000 * 60)) / 1000);
-
     const pad = (num) => String(num).padStart(2, '0');
-    $timer.textContent = `${pad(d)}d ${pad(h)}h ${pad(m)}m ${pad(s)}s`;
+    const label = `${pad(d)}d ${pad(h)}h ${pad(m)}m ${pad(s)}s`;
+    timers.forEach((timer) => { timer.textContent = label; });
   }
 
   update();

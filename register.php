@@ -59,7 +59,7 @@ require_once __DIR__ . '/templates/header.php';
 </section>
 
 <!-- Form Container -->
-<div class="container">
+<div class="container container--reg">
   <div class="form-container">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h4 class="fw-bold mb-0 text-dark"><i class="bi bi-person-fill text-gold me-2"></i>Participant Details</h4>
@@ -68,18 +68,13 @@ require_once __DIR__ . '/templates/header.php';
       </a>
     </div>
 
-    <!-- Early Bird Announcement Alert -->
+    <!-- Early Bird -->
     <?php if (IS_EARLY_BIRD_ACTIVE): ?>
-      <div class="alert p-3 mb-4 early-bird-form-alert border-0 shadow-sm">
-        <i class="bi bi-gift-fill text-warning fs-3 flex-shrink-0"></i>
-        <div class="early-bird-form-alert__body">
-          <strong class="text-warning-emphasis d-block mb-1" style="font-size: 1.05rem;"><i class="bi bi-stars"></i> Early Bird Discount Active!</strong>
-          <span class="text-muted d-block small mb-2">You get a special discount rate of <strong><?= htmlspecialchars(EVENT_CURRENCY, ENT_QUOTES, 'UTF-8') ?> <?= number_format(CURRENT_FEE) ?></strong> (instead of the standard <?= htmlspecialchars(EVENT_CURRENCY, ENT_QUOTES, 'UTF-8') ?> <?= number_format(EVENT_FEE) ?>).</span>
-          <span class="d-inline-flex align-items-center gap-2 badge bg-dark text-warning font-monospace py-1.5 px-3 rounded-pill early-bird-form-alert__countdown">
-            <i class="bi bi-clock"></i> Ends in: <span id="earlyBirdFormCountdown">00d 00h 00m 00s</span>
-          </span>
-        </div>
-      </div>
+      <?php
+        $promoVariant = 'form';
+        $countdownId = 'earlyBirdFormCountdown';
+        require __DIR__ . '/templates/_early_bird_promo.php';
+      ?>
     <?php endif; ?>
 
     <!-- Error Box -->
@@ -146,12 +141,12 @@ require_once __DIR__ . '/templates/header.php';
         </div>
       </div>
 
-      <!-- Tee Time Preference -->
-      <h5 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="bi bi-clock-fill text-gold me-2"></i>Preferred Slot <span class="text-danger">*</span></h5>
-      
-      <div class="row g-3 mb-4">
+      <?php
+        $scheduleHeading = 'Preferred Slot';
+        require __DIR__ . '/templates/registration/_schedule_section_open.php';
+      ?>
         <?php foreach ($teeOptions as $opt): ?>
-          <div class="col-md-6">
+          <div class="col-12 col-md-6">
             <input type="radio" name="scheduleGroup" id="tee_<?= $opt['id'] ?>" class="slot-option-input d-none" value="<?= htmlspecialchars($opt['id'], ENT_QUOTES, 'UTF-8') ?>" <?= $opt['slots_left'] <= 0 ? 'disabled' : '' ?> />
             <label for="tee_<?= $opt['id'] ?>" class="w-100 h-100">
               <div class="slot-option-card">
@@ -161,7 +156,7 @@ require_once __DIR__ . '/templates/header.php';
                     <?= $opt['slots_left'] > 0 ? $opt['slots_left'] . ' slots left' : 'SOLD OUT' ?>
                   </span>
                 </div>
-                <div class="text-muted" style="font-size: 0.8rem; line-height: 1.5;">
+                <div class="slot-option-meta">
                   <div><i class="bi bi-clock"></i> Reporting: <strong><?= htmlspecialchars($opt['reporting'], ENT_QUOTES, 'UTF-8') ?></strong></div>
                   <div><i class="bi bi-camera"></i> Photos: <strong><?= htmlspecialchars($opt['group_photo'], ENT_QUOTES, 'UTF-8') ?></strong></div>
                   <div><i class="bi bi-flag"></i> Tee Off: <strong><?= htmlspecialchars($opt['tee_off'], ENT_QUOTES, 'UTF-8') ?></strong></div>
@@ -170,14 +165,9 @@ require_once __DIR__ . '/templates/header.php';
             </label>
           </div>
         <?php endforeach; ?>
-      </div>
+      <?php require __DIR__ . '/templates/registration/_schedule_section_close.php'; ?>
 
-      <!-- Submit Button -->
-      <div class="d-grid mt-4">
-        <button type="button" id="submitBtn" class="btn btn-complete-registration btn-lg py-3">
-          <i class="bi bi-lock-fill"></i> Complete Registration (<?= htmlspecialchars(EVENT_CURRENCY, ENT_QUOTES, 'UTF-8') ?> <?= number_format(CURRENT_FEE) ?>)
-        </button>
-      </div>
+      <?php require __DIR__ . '/templates/registration/_submit_button.php'; ?>
 
     </form>
   </div>
@@ -201,15 +191,15 @@ require_once __DIR__ . '/templates/header.php';
 <script>
   (function () {
     const deadline = new Date("<?= date('c', strtotime(EARLY_BIRD_DEADLINE)) ?>").getTime();
-    const $timer = document.getElementById('earlyBirdFormCountdown');
-    if (!$timer) return;
+    const timers = document.querySelectorAll('[data-early-bird-countdown]');
+    if (!timers.length) return;
 
     function update() {
       const now = new Date().getTime();
       const diff = deadline - now;
 
       if (diff <= 0) {
-        $timer.textContent = "Expired";
+        timers.forEach((timer) => { timer.textContent = 'Expired'; });
         setTimeout(() => location.reload(), 2000);
         return;
       }
@@ -218,9 +208,9 @@ require_once __DIR__ . '/templates/header.php';
       const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const s = Math.floor((diff % (1000 * 60)) / 1000);
-
       const pad = (num) => String(num).padStart(2, '0');
-      $timer.textContent = `${pad(d)}d ${pad(h)}h ${pad(m)}m ${pad(s)}s`;
+      const label = `${pad(d)}d ${pad(h)}h ${pad(m)}m ${pad(s)}s`;
+      timers.forEach((timer) => { timer.textContent = label; });
     }
 
     update();
