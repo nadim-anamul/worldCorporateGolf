@@ -354,6 +354,9 @@ require_once __DIR__ . '/config/config.php';
       100% { transform: translateX(-50%); }
     }
 
+    .registration-options__intro {
+      margin-bottom: 3rem;
+    }
     .registration-options__lead {
       max-width: 600px;
       font-size: 0.95rem;
@@ -586,8 +589,8 @@ require_once __DIR__ . '/config/config.php';
       <div>
         <strong class="section-title" style="border-left:none; padding-left:0; font-size:1.05rem;">Dinner &amp; Prize Giving Ceremony</strong>
         <div class="d-flex flex-column flex-sm-row flex-wrap gap-sm-3 mt-1" style="font-size:.92rem;">
-          <div><i class="bi bi-clock" style="color:var(--green-mid);"></i>&nbsp; Time: <strong>7:30 PM - 10:00 PM</strong></div>
-          <div><i class="bi bi-geo-alt" style="color:var(--green-mid);"></i>&nbsp; Venue: <strong>Crowne Plaza Dhaka Airport</strong></div>
+          <div><i class="bi bi-clock" style="color:var(--green-mid);"></i>&nbsp;  <strong>7:30 PM - 10:00 PM</strong></div>
+          <div><i class="bi bi-geo-alt" style="color:var(--green-mid);"></i>&nbsp; <strong>Crowne Plaza Dhaka Airport</strong></div>
         </div>
       </div>
     </div>

@@ -272,6 +272,17 @@ h1, h2, h3, h4, h5, h6 {
   margin-top: 1.5rem;
 }
 
+.reg-submit-notice {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin-bottom: 0.65rem;
+}
+
+.reg-submit-notice .bi-shield-lock {
+  color: var(--green-mid);
+  margin-right: 0.2rem;
+}
+
 .badge-slots {
   background-color: var(--green-dark);
   color: #fff;
