@@ -341,16 +341,32 @@ require_once __DIR__ . '/config/config.php';
     }
 
     .registration-options__intro {
-      margin-bottom: 3rem;
+      margin-bottom: 2.5rem;
     }
-    .registration-options__lead {
-      max-width: 600px;
+    .registration-options__logo {
+      display: block;
+      max-width: min(90vw, 420px);
+      max-height: 120px;
+      width: auto;
+      height: auto;
+      margin: 0 auto 1.25rem;
+      object-fit: contain;
+    }
+    .registration-options__title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--green-dark);
+      margin-bottom: 0.75rem;
+      letter-spacing: 0.02em;
+    }
+    .registration-options__deadline {
       font-size: 0.95rem;
-      line-height: 1.55;
+      color: #4b5563;
+      margin-bottom: 1rem;
+      line-height: 1.5;
     }
-    .registration-options__promo {
-      max-width: 36rem;
-      margin: 0.75rem auto 0;
+    .registration-options__deadline strong {
+      color: var(--green-dark);
     }
 
     @media (max-width: 768px) {
@@ -407,20 +423,13 @@ require_once __DIR__ . '/config/config.php';
         margin-bottom: 1.15rem !important;
       }
       .registration-options__title {
-        font-size: 0.95rem;
-        letter-spacing: 0.02em;
-        line-height: 1.35;
-        margin-bottom: 0.5rem !important;
+        font-size: 1.35rem;
       }
-      .registration-options__lead {
-        font-size: 0.84rem;
-        line-height: 1.5;
-        margin-bottom: 0 !important;
-        padding: 0;
+      .registration-options__logo {
+        max-height: 100px;
       }
-      .registration-options__promo {
-        max-width: 100%;
-        margin-top: 0.65rem;
+      .registration-options__deadline {
+        font-size: 0.86rem;
       }
       .registration-options-section .row {
         --bs-gutter-y: 0.85rem;
@@ -660,31 +669,49 @@ $heroBackgroundUrl = defined('EVENT_HERO_BACKGROUND_URL') && EVENT_HERO_BACKGROU
 <!-- ══════════════════════  REGISTRATION OPTIONS  ══════════════════════ -->
 <section id="registration-options" class="registration-options-section py-5" style="background:var(--green-light);">
   <div class="container container--landing">
-    
+
     <div class="registration-options__intro text-center">
-      <h2 class="registration-options__title fw-bold mb-2 text-uppercase" style="color:var(--green-dark);">Choose Your Registration Type</h2>
-      <p class="registration-options__lead text-muted mx-auto">
-        Registration closes on <strong><?= htmlspecialchars(EVENT_DEADLINE, ENT_QUOTES, 'UTF-8') ?></strong> (or until slots are filled). 
-        A participant contribution will be processed securely via SSLCommerz.
+      <?php if (defined('EVENT_LOGO_URL') && EVENT_LOGO_URL !== ''): ?>
+        <img
+          class="registration-options__logo"
+          src="<?= htmlspecialchars(EVENT_LOGO_URL, ENT_QUOTES, 'UTF-8') ?>"
+          alt="<?= htmlspecialchars(EVENT_NAME, ENT_QUOTES, 'UTF-8') ?>"
+        />
+      <?php endif; ?>
+
+      <h2 class="registration-options__title">Registration</h2>
+
+      <p class="registration-options__deadline mx-auto">
+        Registration closes on <strong><?= htmlspecialchars(EVENT_DEADLINE, ENT_QUOTES, 'UTF-8') ?></strong>
       </p>
-      
-      <?php if (IS_EARLY_BIRD_ACTIVE): ?>
-        <div class="registration-options__promo">
-          <?php
-            $promoVariant = 'section';
-            $countdownId = 'earlyBirdSectionCountdown';
-            require __DIR__ . '/templates/_early_bird_promo.php';
-          ?>
-        </div>
-      <?php else: ?>
-        <div class="early-bird-pricing-wrap">
-          <?php $pricingVariant = 'default'; require __DIR__ . '/templates/_event_pricing.php'; ?>
+
+      <?php if (defined('REGISTRATION_DEADLINE_AT') && REGISTRATION_DEADLINE_AT): ?>
+        <div class="registration-countdown" role="timer" aria-live="polite" data-registration-countdown-wrap>
+          <span class="registration-countdown__label">Closes in</span>
+          <div class="registration-countdown__segments">
+            <div class="registration-countdown__segment">
+              <span class="registration-countdown__value" data-reg-days>00</span>
+              <span class="registration-countdown__unit">Days</span>
+            </div>
+            <div class="registration-countdown__segment">
+              <span class="registration-countdown__value" data-reg-hours>00</span>
+              <span class="registration-countdown__unit">Hours</span>
+            </div>
+            <div class="registration-countdown__segment">
+              <span class="registration-countdown__value" data-reg-mins>00</span>
+              <span class="registration-countdown__unit">Mins</span>
+            </div>
+            <div class="registration-countdown__segment">
+              <span class="registration-countdown__value" data-reg-secs>00</span>
+              <span class="registration-countdown__unit">Secs</span>
+            </div>
+          </div>
+          <div class="registration-countdown__closed d-none" data-registration-closed>Registration Closed</div>
         </div>
       <?php endif; ?>
     </div>
 
     <div class="row g-4 justify-content-center">
-      <!-- Golfer Option Card -->
       <div class="col-md-6 col-lg-5 d-flex">
         <div class="card reg-option-card w-100 shadow-sm border-0">
           <div class="card-body p-4 d-flex flex-column text-center">
@@ -693,7 +720,7 @@ $heroBackgroundUrl = defined('EVENT_HERO_BACKGROUND_URL') && EVENT_HERO_BACKGROU
             </div>
             <h4 class="fw-bold mb-2" style="color:var(--green-dark);">Golfer Participant</h4>
             <p class="text-muted flex-grow-1 small mb-4">
-              Participate in the main tournament with 18-hole shotgun format. Includes green fee, networking lunch, exclusive tournament goodies, and eligibility for prizes and trophies.
+              9-hole Golfing Contest followed by Dinner &amp; Prize Giving
             </p>
             <a href="register.php" class="btn btn-register-card py-2.5 w-100">
               <i class="bi bi-person-plus-fill me-1"></i> Register as Golfer
@@ -702,7 +729,6 @@ $heroBackgroundUrl = defined('EVENT_HERO_BACKGROUND_URL') && EVENT_HERO_BACKGROU
         </div>
       </div>
 
-      <!-- Guest Option Card -->
       <div class="col-md-6 col-lg-5 d-flex">
         <div class="card reg-option-card w-100 shadow-sm border-0">
           <div class="card-body p-4 d-flex flex-column text-center">
@@ -711,7 +737,7 @@ $heroBackgroundUrl = defined('EVENT_HERO_BACKGROUND_URL') && EVENT_HERO_BACKGROU
             </div>
             <h4 class="fw-bold mb-2" style="color:var(--green-dark);">Guest / Non-Golfer</h4>
             <p class="text-muted flex-grow-1 small mb-4">
-              Join as a networking guest. Includes entry to the driving range, guest putting contest experience, lucky draw entry, networking lunch, and prize ceremony access.
+              Join as a networking guest, includes entry to the driving range, guest and putting contest experience
             </p>
             <a href="register_non_golfer.php" class="btn btn-register-card-secondary py-2.5 w-100">
               <i class="bi bi-people-fill me-1"></i> Register as Guest
@@ -861,25 +887,28 @@ $heroBackgroundUrl = defined('EVENT_HERO_BACKGROUND_URL') && EVENT_HERO_BACKGROU
 <script>
 (function () {
   const deadline = new Date("<?= date('c', strtotime((string)REGISTRATION_DEADLINE_AT)) ?>").getTime();
-  const wrap = document.querySelector('[data-registration-countdown-wrap]');
-  if (!wrap || Number.isNaN(deadline)) return;
+  const wraps = document.querySelectorAll('[data-registration-countdown-wrap]');
+  if (!wraps.length || Number.isNaN(deadline)) return;
 
-  const daysEl = wrap.querySelector('[data-reg-days]');
-  const hoursEl = wrap.querySelector('[data-reg-hours]');
-  const minsEl = wrap.querySelector('[data-reg-mins]');
-  const secsEl = wrap.querySelector('[data-reg-secs]');
-  const segments = wrap.querySelector('.hero-countdown__segments');
-  const closedEl = wrap.querySelector('[data-registration-closed]');
+  const daysEls = document.querySelectorAll('[data-reg-days]');
+  const hoursEls = document.querySelectorAll('[data-reg-hours]');
+  const minsEls = document.querySelectorAll('[data-reg-mins]');
+  const secsEls = document.querySelectorAll('[data-reg-secs]');
   const ctaBtn = document.getElementById('heroRegisterBtn');
   const pad = (num) => String(num).padStart(2, '0');
 
   function setUrgent(isUrgent) {
-    wrap.classList.toggle('hero-countdown--urgent', isUrgent);
+    wraps.forEach((wrap) => wrap.classList.toggle('hero-countdown--urgent', isUrgent));
+    wraps.forEach((wrap) => wrap.classList.toggle('registration-countdown--urgent', isUrgent));
   }
 
   function showClosed() {
-    if (segments) segments.classList.add('d-none');
-    if (closedEl) closedEl.classList.remove('d-none');
+    wraps.forEach((wrap) => {
+      const segments = wrap.querySelector('.hero-countdown__segments, .registration-countdown__segments');
+      const closedEl = wrap.querySelector('[data-registration-closed]');
+      if (segments) segments.classList.add('d-none');
+      if (closedEl) closedEl.classList.remove('d-none');
+    });
     if (ctaBtn) {
       ctaBtn.classList.add('btn-register--disabled');
       ctaBtn.setAttribute('aria-disabled', 'true');
@@ -898,10 +927,10 @@ $heroBackgroundUrl = defined('EVENT_HERO_BACKGROUND_URL') && EVENT_HERO_BACKGROU
     const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     const s = Math.floor((diff % (1000 * 60)) / 1000);
 
-    if (daysEl) daysEl.textContent = pad(d);
-    if (hoursEl) hoursEl.textContent = pad(h);
-    if (minsEl) minsEl.textContent = pad(m);
-    if (secsEl) secsEl.textContent = pad(s);
+    daysEls.forEach((el) => { el.textContent = pad(d); });
+    hoursEls.forEach((el) => { el.textContent = pad(h); });
+    minsEls.forEach((el) => { el.textContent = pad(m); });
+    secsEls.forEach((el) => { el.textContent = pad(s); });
     setUrgent(diff < 24 * 60 * 60 * 1000);
   }
 
