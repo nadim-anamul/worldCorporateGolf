@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS `registrations` (
     `tshirt_size`     VARCHAR(50)   DEFAULT NULL,
     `home_club`       VARCHAR(255)  DEFAULT NULL,
     `schedule_group`  VARCHAR(64)   NOT NULL, -- references tee_time_options.id
-    `player_category` ENUM('Diplomats','Non-Diplomats') NOT NULL,
+    `player_category` VARCHAR(20)  NOT NULL DEFAULT 'N/A',
     
     -- Sponsor/Reference details
     `reference_name`    VARCHAR(255)  DEFAULT NULL,
@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS `registrations_non_golfer` (
     `tshirt_size`              VARCHAR(50)   DEFAULT NULL,
     `arrival_window`           VARCHAR(64)   NOT NULL, -- references arrival_window_options_non_golfer.id
     `putting_contest_interest` ENUM('Yes','No') NOT NULL,
-    `player_category`          ENUM('Diplomats','Non-Diplomats') NOT NULL,
+    `player_category`          VARCHAR(20)   NOT NULL DEFAULT 'N/A',
     
     -- Sponsor/Reference details
     `reference_name`    VARCHAR(255)  DEFAULT NULL,

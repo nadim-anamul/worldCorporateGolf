@@ -28,7 +28,7 @@ function exportRow(array $r, int $serial, array $labels): array {
     return [
         $serial, $r['registration_type'] ?? '', $r['unique_id'] ?? '', $r['tran_id'] ?? '',
         $r['full_name'] ?? '', $r['designation'] ?? '', $r['organization'] ?? '', $r['nationality'] ?? '', $r['gender'] ?? '',
-        $r['contact'] ?? '', $r['email'] ?? '', $r['mailing_address'] ?? '', $r['player_category'] ?? '',
+        $r['contact'] ?? '', $r['email'] ?? '', $r['mailing_address'] ?? '', formatPlayerCategory($r['player_category'] ?? ''),
         $r['reference_name'] ?? '', $r['reference_mission'] ?? '', $r['reference_contact'] ?? '',
         $r['tshirt_size'] ?? '', $groupId, $label, $r['home_club'] ?? '', $r['handicap'] ?? '', $r['putting_contest_interest'] ?? '',
         $r['profile_photo'] ?? '', $r['name_on_polo'] ?? '', $r['golf_set_brand'] ?? '',
@@ -350,7 +350,7 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
               <td><?= ($r['registration_type'] ?? '') === 'non_golfer' ? '<span class="badge-type type-non">Non-Golfer</span>' : '<span class="badge-type type-golfer">Golfer</span>' ?></td>
               <td><strong><?= esc($r['full_name']) ?></strong></td>
               <td><?= esc($r['organization']) ?></td>
-              <td><?= esc($r['player_category']) ?></td>
+              <td><?= esc(formatPlayerCategory($r['player_category'] ?? '')) ?></td>
               <td><?= esc($r['contact']) ?></td>
               <td><?= esc($r['email']) ?></td>
               <td><?= esc($r['tshirt_size']) ?></td>
@@ -439,6 +439,11 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
     };
     const m = map[s] || ['bg-light text-dark border', s];
     return '<span class="badge '+m[0]+'">'+m[1]+'</span>';
+  }
+
+  function formatCategory(category) {
+    if (!category || category === 'N/A') return 'N/A';
+    return category;
   }
 
   function resetDeleteBtn() {
@@ -582,7 +587,7 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
     $('#modalBody').html(
       photoHtml +
       '<div class="row"><div class="col-md-6">' +
-      row('Registration Type', typeLabel) + row('Full Name', d.full_name) + row('Designation', d.designation) + row('Organization', d.organization) + row('Nationality', d.nationality) + row('Gender', d.gender) + row('Category', d.player_category) +
+      row('Registration Type', typeLabel) + row('Full Name', d.full_name) + row('Designation', d.designation) + row('Organization', d.organization) + row('Nationality', d.nationality) + row('Gender', d.gender) + row('Category', formatCategory(d.player_category)) +
       '</div><div class="col-md-6">' +
       row('Contact Phone', d.contact) + row('Email', d.email) + row('T-Shirt Size', d.tshirt_size) + row('Mailing Address', d.mailing_address) + eventSpecific +
       '</div></div>' + sponsorSection + '<hr>' +

@@ -18,6 +18,15 @@ function statusBadge(string $status): string
     };
 }
 
+function formatPlayerCategory(?string $category): string
+{
+    $category = trim((string)$category);
+    if ($category === '' || $category === 'N/A') {
+        return 'N/A';
+    }
+    return $category;
+}
+
 function sanitizeInput(string $value): string
 {
     return htmlspecialchars(strip_tags(trim($value)), ENT_QUOTES, 'UTF-8');

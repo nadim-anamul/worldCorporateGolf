@@ -51,7 +51,7 @@ require_once __DIR__ . '/templates/header.php';
 ?>
 
 <!-- Hero Header -->
-<section class="hero py-4">
+<section class="hero hero-solid py-4">
   <div class="container text-center">
     <h1 class="font-serif text-white h2 mb-1">Golfer Registration</h1>
     <p class="mb-0 opacity-75" style="font-size: 0.9rem;">Please fill out your tournament details accurately.</p>
@@ -70,12 +70,12 @@ require_once __DIR__ . '/templates/header.php';
 
     <!-- Early Bird Announcement Alert -->
     <?php if (IS_EARLY_BIRD_ACTIVE): ?>
-      <div class="alert p-3 mb-4 d-flex align-items-center gap-3 border-0 shadow-sm" style="background: linear-gradient(135deg, #fef9c3 0%, #fef3c7 100%); border-left: 5px solid #d97706 !important; border-radius: 0.75rem;">
+      <div class="alert p-3 mb-4 early-bird-form-alert border-0 shadow-sm">
         <i class="bi bi-gift-fill text-warning fs-3 flex-shrink-0"></i>
-        <div>
+        <div class="early-bird-form-alert__body">
           <strong class="text-warning-emphasis d-block mb-1" style="font-size: 1.05rem;"><i class="bi bi-stars"></i> Early Bird Discount Active!</strong>
           <span class="text-muted d-block small mb-2">You get a special discount rate of <strong><?= htmlspecialchars(EVENT_CURRENCY, ENT_QUOTES, 'UTF-8') ?> <?= number_format(CURRENT_FEE) ?></strong> (instead of the standard <?= htmlspecialchars(EVENT_CURRENCY, ENT_QUOTES, 'UTF-8') ?> <?= number_format(EVENT_FEE) ?>).</span>
-          <span class="d-inline-flex align-items-center gap-2 badge bg-dark text-warning font-monospace py-1.5 px-3 rounded-pill" style="font-size: 0.82rem;">
+          <span class="d-inline-flex align-items-center gap-2 badge bg-dark text-warning font-monospace py-1.5 px-3 rounded-pill early-bird-form-alert__countdown">
             <i class="bi bi-clock"></i> Ends in: <span id="earlyBirdFormCountdown">00d 00h 00m 00s</span>
           </span>
         </div>
@@ -147,7 +147,7 @@ require_once __DIR__ . '/templates/header.php';
       </div>
 
       <!-- Tee Time Preference -->
-      <h5 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="bi bi-clock-fill text-gold me-2"></i>Preferred Tee Time <span class="text-danger">*</span></h5>
+      <h5 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="bi bi-clock-fill text-gold me-2"></i>Preferred Slot <span class="text-danger">*</span></h5>
       
       <div class="row g-3 mb-4">
         <?php foreach ($teeOptions as $opt): ?>
@@ -189,7 +189,7 @@ require_once __DIR__ . '/templates/header.php';
 <script>
   RegistrationForm.init({
     scheduleSelector: '[name="scheduleGroup"]:checked',
-    scheduleError: 'Please select your preferred tee time.',
+    scheduleError: 'Please select your preferred slot.',
     extendPayload: function (payload) {
       payload.handicap = document.getElementById('handicap').value;
       payload.golfSetBrand = document.getElementById('golfSetBrand').value;

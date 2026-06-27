@@ -11,10 +11,10 @@ class RegistrationValidator
     }
 
     $data = [
-      'player_category'   => sanitizeInput((string)($input['playerCategory'] ?? '')),
-      'reference_name'    => sanitizeInput((string)($input['referenceName'] ?? '')),
-      'reference_mission' => sanitizeInput((string)($input['referenceMission'] ?? '')),
-      'reference_contact' => sanitizeInput((string)($input['referenceContact'] ?? '')),
+      'player_category'   => 'N/A',
+      'reference_name'    => '',
+      'reference_mission' => '',
+      'reference_contact' => '',
       'full_name'         => sanitizeInput((string)($input['fullName'] ?? '')),
       'designation'       => sanitizeInput((string)($input['designation'] ?? '')),
       'organization'      => sanitizeInput((string)($input['organization'] ?? '')),
@@ -31,16 +31,15 @@ class RegistrationValidator
     ];
 
     $required = [
-      'Player Category' => $data['player_category'],
-      'Full Name'       => $data['full_name'],
-      'Designation'     => $data['designation'],
-      'Organization'    => $data['organization'],
-      'Nationality'     => $data['nationality'],
-      'Contact'         => $data['contact'],
-      'Email'           => $data['email'],
-      'T-Shirt Size'    => $data['tshirt_size'],
-      'Schedule'        => $data['schedule_group'],
-      'Name on Polo'    => $data['name_on_polo'],
+      'Full Name'    => $data['full_name'],
+      'Designation'  => $data['designation'],
+      'Organization' => $data['organization'],
+      'Nationality'  => $data['nationality'],
+      'Contact'      => $data['contact'],
+      'Email'        => $data['email'],
+      'T-Shirt Size' => $data['tshirt_size'],
+      'Schedule'     => $data['schedule_group'],
+      'Name on Polo' => $data['name_on_polo'],
     ];
 
     if ($regType === 'golfer') {
@@ -58,16 +57,6 @@ class RegistrationValidator
 
     if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
       throw new RuntimeException('Invalid email address.');
-    }
-
-    if (!in_array($data['player_category'], ['Diplomats', 'Non-Diplomats'], true)) {
-      throw new RuntimeException('Invalid player category.');
-    }
-
-    if ($data['player_category'] === 'Non-Diplomats') {
-      if ($data['reference_name'] === '' || $data['reference_mission'] === '' || $data['reference_contact'] === '') {
-        throw new RuntimeException('Diplomatic sponsor details are required for Non-Diplomat registrations.');
-      }
     }
 
     if ($regType === 'non_golfer' && !in_array($data['putting_contest'], ['Yes', 'No'], true)) {

@@ -1,33 +1,3 @@
-      <!-- Player Category -->
-      <div class="form-section-card">
-        <h6 class="form-section-title"><i class="bi bi-person-fill text-gold"></i> Category</h6>
-        <div class="row">
-          <div class="col-md-12">
-            <label for="playerCategory" class="form-label">Category <span class="text-danger">*</span></label>
-            <select class="form-select" id="playerCategory" required>
-              <option value="Diplomats" selected>Diplomat</option>
-              <option value="Non-Diplomats">Non-Diplomat (Corporate / Guest)</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div id="referenceSection" class="p-3 bg-light rounded-3 mb-4" style="display: none; border-left: 4px solid var(--gold);">
-        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-people-fill me-1"></i>Reference / Sponsor Diplomat</h6>
-        <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 0.75rem;">Non-Diplomat registrations require a diplomat sponsor.</p>
-        <div class="row g-2">
-          <div class="col-md-4">
-            <input type="text" class="form-control form-control-sm" id="referenceName" placeholder="Diplomat Full Name" />
-          </div>
-          <div class="col-md-4">
-            <input type="text" class="form-control form-control-sm" id="referenceMission" placeholder="Mission / Embassy" />
-          </div>
-          <div class="col-md-4">
-            <input type="text" class="form-control form-control-sm" id="referenceContact" placeholder="Contact Phone" />
-          </div>
-        </div>
-      </div>
-
       <div class="form-section-card">
         <h6 class="form-section-title"><i class="bi bi-card-text text-gold"></i> Personal &amp; Contact Details</h6>
         <div class="row mb-3">

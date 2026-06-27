@@ -27,7 +27,6 @@ try {
     $validator = new RegistrationValidator();
 
     $golferPayload = [
-        'playerCategory' => 'Diplomats',
         'fullName' => 'Mr. Test User',
         'designation' => 'Ambassador',
         'organization' => 'Test Org',
@@ -42,13 +41,7 @@ try {
     ];
     $validated = $validator->validate($golferPayload, 'golfer');
     assertTrue($validated['full_name'] === 'Mr. Test User', 'Golfer validation passes');
-
-    try {
-        $validator->validate(['playerCategory' => 'Non-Diplomats', 'fullName' => 'X'], 'golfer');
-        assertTrue(false, 'Non-diplomat sponsor should be required');
-    } catch (RuntimeException) {
-        assertTrue(true, 'Non-diplomat sponsor required');
-    }
+    assertTrue($validated['player_category'] === 'N/A', 'Player category defaults to N/A');
 
     $labels = $schedule->buildScheduleLabels();
     assertTrue(is_array($labels), 'Schedule labels built');

@@ -8,10 +8,6 @@
     return {
       csrf_token: form.querySelector('[name="csrf_token"]').value,
       registration_type: document.getElementById('registration_type').value,
-      playerCategory: document.getElementById('playerCategory').value,
-      referenceName: document.getElementById('referenceName').value.trim(),
-      referenceMission: document.getElementById('referenceMission').value.trim(),
-      referenceContact: document.getElementById('referenceContact').value.trim(),
       fullName: document.getElementById('nameTitle').value + ' ' + document.getElementById('fullName').value.trim(),
       email: document.getElementById('email').value.trim(),
       contact: document.getElementById('contact').value.trim(),
@@ -22,21 +18,6 @@
       nameOnPolo: document.getElementById('nameOnPolo').value.trim(),
       tshirtSize: tshirtVal === 'Oversize' ? 'Oversize (' + customTshirtSize.value.trim() + ')' : tshirtVal
     };
-  }
-
-  function wireCategoryToggle() {
-    var categorySelect = document.getElementById('playerCategory');
-    var refSection = document.getElementById('referenceSection');
-    if (!categorySelect || !refSection) return;
-    categorySelect.addEventListener('change', function () {
-      var isNonDiplomat = this.value === 'Non-Diplomats';
-      refSection.style.display = isNonDiplomat ? 'block' : 'none';
-      if (!isNonDiplomat) {
-        document.getElementById('referenceName').value = '';
-        document.getElementById('referenceMission').value = '';
-        document.getElementById('referenceContact').value = '';
-      }
-    });
   }
 
   function wireCustomTshirt() {
@@ -57,7 +38,6 @@
   }
 
   function init(options) {
-    wireCategoryToggle();
     wireCustomTshirt();
 
     var form = document.getElementById('regForm');

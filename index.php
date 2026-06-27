@@ -60,8 +60,15 @@ require_once __DIR__ . '/config/config.php';
       animation: pulse-glow 2.5s infinite ease-in-out;
     }
     @keyframes pulse-glow {
-      0%, 100% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 2px rgba(201, 168, 76, 0.5)); }
-      50% { transform: scale(1.1); opacity: 0.85; filter: drop-shadow(0 0 6px rgba(201, 168, 76, 0.8)); }
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.82; }
+    }
+    .animate-pulse-slow--icon {
+      animation: pulse-icon 2.5s infinite ease-in-out;
+    }
+    @keyframes pulse-icon {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.08); opacity: 0.9; }
     }
 
     /* ── Hero ────────────────────────────────────────────────────────────── */
@@ -385,6 +392,54 @@ require_once __DIR__ . '/config/config.php';
       .section-title {
         font-size: 1rem;
       }
+      .section-title--event-info {
+        text-align: center;
+        border-left: none;
+        padding-left: 0;
+      }
+    }
+
+    .early-bird-banner__inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      text-align: center;
+    }
+    @media (min-width: 576px) {
+      .early-bird-banner__inner {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+    }
+    .early-bird-banner__text {
+      line-height: 1.45;
+      font-size: clamp(0.78rem, 2.8vw, 0.91rem);
+    }
+    .early-bird-pricing-wrap {
+      width: 100%;
+      margin-top: 1rem;
+      padding: 0 0.5rem 0.25rem;
+    }
+    .early-bird-pricing-badge {
+      display: block;
+      width: fit-content;
+      max-width: 100%;
+      margin: 0 auto;
+      white-space: normal;
+      line-height: 1.45;
+      font-size: clamp(0.82rem, 2.8vw, 1rem) !important;
+      padding: 0.65rem 1rem !important;
+      box-sizing: border-box;
+      transform: none !important;
+    }
+    .early-bird-pricing-badge.animate-pulse-slow {
+      animation: pulse-badge 2.5s infinite ease-in-out;
+    }
+    @keyframes pulse-badge {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.88; }
     }
   </style>
 </head>
@@ -392,9 +447,14 @@ require_once __DIR__ . '/config/config.php';
 
 <?php if (IS_EARLY_BIRD_ACTIVE): ?>
   <div class="early-bird-banner py-2.5 px-3 text-center position-sticky top-0 w-100 shadow-sm">
-    <div class="container d-flex flex-wrap align-items-center justify-content-center gap-2">
-      <span class="d-inline-flex align-items-center"><i class="bi bi-lightning-charge-fill text-warning fs-6 me-1.5 animate-pulse-slow"></i> <strong>Early Bird Offer Active!</strong>&nbsp;Save BDT <?= number_format(EVENT_FEE - EARLY_BIRD_FEE) ?>/- by registering now. Offer ends in:</span>
-      <span id="earlyBirdCountdown" class="countdown-badge font-monospace text-warning fs-6">00d 00h 00m 00s</span>
+    <div class="container">
+      <div class="early-bird-banner__inner">
+        <span class="early-bird-banner__text d-inline-flex align-items-center flex-wrap justify-content-center">
+          <i class="bi bi-lightning-charge-fill text-warning fs-6 me-1.5 animate-pulse-slow--icon"></i>
+          <strong>Early Bird Offer Active!</strong>&nbsp;Save BDT <?= number_format(EVENT_FEE - EARLY_BIRD_FEE) ?>/- by registering now. Offer ends in:
+        </span>
+        <span id="earlyBirdCountdown" class="countdown-badge font-monospace text-warning fs-6">00d 00h 00m 00s</span>
+      </div>
     </div>
   </div>
 <?php endif; ?>
@@ -417,7 +477,7 @@ require_once __DIR__ . '/config/config.php';
 <!-- ══════════════════════  EVENT INFO  ══════════════════════ -->
 <section class="py-5 bg-white">
   <div class="container">
-    <h2 class="section-title"><i class="bi bi-info-circle"></i>&nbsp; Event Information</h2>
+    <h2 class="section-title section-title--event-info"><i class="bi bi-info-circle"></i>&nbsp; Event Information</h2>
     <div class="row g-4">
 
       <div class="col-sm-6 col-lg-3">
@@ -465,7 +525,7 @@ require_once __DIR__ . '/config/config.php';
     <!-- Lunch & Prize -->
     <div class="alert mt-4 mb-0 d-flex align-items-start gap-3"
          style="background:var(--green-light); border:1px solid #9dc4cb; border-radius:.75rem;">
-      <i class="bi bi-cup-hot-fill fs-4 mt-1 flex-shrink-0" style="color:var(--green-mid);"></i>
+      <i class="bi bi-award-fill fs-4 mt-1 flex-shrink-0" style="color:var(--green-mid);"></i>
       <div>
         <strong class="section-title" style="border-left:none; padding-left:0; font-size:1.05rem;">Dinner &amp; Prize Giving Ceremony</strong>
         <div class="d-flex flex-column flex-sm-row flex-wrap gap-sm-3 mt-1" style="font-size:.92rem;">
@@ -486,7 +546,7 @@ require_once __DIR__ . '/config/config.php';
         <h2 class="section-title"><i class="bi bi-stars"></i>&nbsp; Activities</h2>
         <div class="activity-item"><i class="bi bi-people-fill"></i> Networking &amp; Business Connections</div>
         <div class="activity-item"><i class="bi bi-bullseye"></i> Putting Contest</div>
-        <div class="activity-item"><i class="bi bi-gift-fill"></i> Prizes &amp; Lucky Draw</div>
+        <div class="activity-item"><i class="bi bi-flag-fill"></i> 9-Hole Golfing Contest with 108 Top Executives</div>
         <div class="activity-item"><i class="bi bi-bag-heart-fill"></i> Exclusive Goodies</div>
         <div class="activity-item"><i class="bi bi-geo-alt-fill"></i> Driving Range Experience</div>
       </div>
@@ -494,12 +554,11 @@ require_once __DIR__ . '/config/config.php';
       <div class="col-md-6">
         <h2 class="section-title"><i class="bi bi-card-checklist"></i>&nbsp; Rules &amp; Guidelines</h2>
         <ul class="rules-list ps-3">
-          <li>Open to executive community, foreign professionals, and distinguished invited guests.</li>
-          <li>Dress code: Proper golf attire required.</li>
-          <li>Participants must bring their own clubs and gear.</li>
-          <li>Arrive at least 30 minutes before tee time.</li>
-          <li>Format: Best Ball Scramble; Shotgun Method.</li>
           <li>Respect for course rules, staff, and fellow participants is mandatory.</li>
+          <li>Dress code: Golf Attire</li>
+          <li>Participants must bring their own clubs and gear.</li>
+          <li>Arrive according to Reporting Times, and at least 30 minutes before tee-off time.</li>
+          <li>Format: Best Ball Scramble; Shotgun Method.</li>
           <li>Non-golfers may participate in Driving Range &amp; Putting Contest only.</li>
           <li>This is a friendly corporate golf tournament focused on networking and enjoyment. It follows a social format and may not suit highly competitive golfers.</li>
           <li>All participant contributions are strictly non-refundable under any circumstances.</li>
@@ -525,12 +584,16 @@ require_once __DIR__ . '/config/config.php';
       </p>
       
       <?php if (IS_EARLY_BIRD_ACTIVE): ?>
-        <div class="badge bg-warning text-dark px-4 py-2 fs-6 rounded-pill shadow-sm animate-pulse-slow">
-          <i class="bi bi-gift-fill me-1"></i> Early Bird Discount Active: BDT <?= number_format(CURRENT_FEE) ?> (Standard BDT <?= number_format(EVENT_FEE) ?>)
+        <div class="early-bird-pricing-wrap">
+          <div class="badge bg-warning text-dark early-bird-pricing-badge rounded-pill shadow-sm animate-pulse-slow">
+            <i class="bi bi-gift-fill me-1"></i> Early Bird Discount Active: BDT <?= number_format(CURRENT_FEE) ?> (Standard BDT <?= number_format(EVENT_FEE) ?>)
+          </div>
         </div>
       <?php else: ?>
-        <div class="badge bg-secondary text-white px-4 py-2 fs-6 rounded-pill shadow-sm">
-          Participant Contribution: BDT <?= number_format(EVENT_FEE) ?>
+        <div class="early-bird-pricing-wrap">
+          <div class="badge bg-secondary text-white early-bird-pricing-badge rounded-pill shadow-sm">
+            Participant Contribution: BDT <?= number_format(EVENT_FEE) ?>
+          </div>
         </div>
       <?php endif; ?>
     </div>
@@ -589,8 +652,7 @@ require_once __DIR__ . '/config/config.php';
           </div>
           <div class="about-card-body">
             <h6>GolfHouse</h6>
-            <p>Bangladesh's leading golf media and event platform, publishing the country's only regular
-            monthly golf magazine since 2015 and organising premium tournaments and corporate engagements.</p>
+            <p>Bangladesh's leading golf media and event platform, publishing the country's signature monthly golf magazine since 2015 and organizing premium tournaments and corporate engagements through enhanced collaboration.</p>
           </div>
         </div>
       </div>
@@ -602,9 +664,7 @@ require_once __DIR__ . '/config/config.php';
           </div>
           <div class="about-card-body">
             <h6>Corporate Tour</h6>
-            <p>An exclusive initiative by GolfHouse Holdings Ltd. bringing together business and golf through
-            high-impact events, tournaments, and networking platforms for corporate leaders, diplomats,
-            and decision-makers.</p>
+            <p>An exclusive initiative by GolfHouse Holdings Ltd. bringing together business and golf through high-impact events, tournaments, and networking platforms for corporate leaders, diplomats, and decision-makers.</p>
           </div>
         </div>
       </div>
