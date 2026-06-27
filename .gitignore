@@ -10,3 +10,5 @@ backup_old/
 .idea/
 *.log
 uploads/profile_pics/*
+uploads/tournament_logos/*
+uploads/tournament_backgrounds/*

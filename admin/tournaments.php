@@ -14,12 +14,24 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 
 require_once dirname(__DIR__) . '/config/config.php';
 require_once dirname(__DIR__) . '/config/db.php';
+require_once dirname(__DIR__) . '/src/TournamentLogoService.php';
+require_once dirname(__DIR__) . '/src/TournamentHeroBackgroundService.php';
 
 $errors = [];
 $success = '';
+$logoService = new TournamentLogoService();
+$heroBackgroundService = new TournamentHeroBackgroundService();
 
 function esc(mixed $v): string {
     return htmlspecialchars((string)$v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
+function formatTournamentDeadline(mixed $deadline): string {
+    if ($deadline === null || $deadline === '') {
+        return '—';
+    }
+    $ts = strtotime((string)$deadline);
+    return $ts !== false ? date('M j, Y g:i A', $ts) : esc($deadline);
 }
 
 try {
@@ -48,10 +60,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $format = trim((string)($_POST['format'] ?? ''));
         $fee = (float)($_POST['fee'] ?? 0.0);
         $currency = trim((string)($_POST['currency'] ?? 'BDT'));
-        $deadline = trim((string)($_POST['deadline'] ?? ''));
+        $deadlineRaw = trim((string)($_POST['deadline'] ?? ''));
         $phone1 = trim((string)($_POST['contact_phone_1'] ?? ''));
         $phone2 = trim((string)($_POST['contact_phone_2'] ?? ''));
         $id = (int)($_POST['id'] ?? 0);
+        $deadline = null;
 
         // Fetch early bird configurations
         $ebFeeRaw = trim((string)($_POST['early_bird_fee'] ?? ''));
@@ -62,7 +75,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $ebDeadline = date('Y-m-d H:i:s', strtotime($ebDeadlineRaw));
         }
 
-        if ($name === '' || $date === '' || $venue === '' || $format === '' || $deadline === '') {
+        if ($deadlineRaw !== '') {
+            $deadlineTs = strtotime($deadlineRaw);
+            if ($deadlineTs === false) {
+                $errors[] = 'Registration deadline must be a valid date and time.';
+            } else {
+                $deadline = date('Y-m-d H:i:s', $deadlineTs);
+            }
+        }
+
+        if ($name === '' || $date === '' || $venue === '' || $format === '' || $deadline === null) {
             $errors[] = 'Tournament name, date, venue, format, and registration deadline are required.';
         }
 
@@ -80,22 +102,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (empty($errors)) {
             try {
+                $tournamentId = $action === 'update' ? $id : 0;
+                $logoPath = null;
+                $heroBackgroundPath = null;
+
                 if ($action === 'create') {
-                    $stmt = $pdo->prepare(
+                    $insertStmt = $pdo->prepare(
                         "INSERT INTO tournaments (name, date, venue, format, fee, early_bird_fee, currency, deadline, early_bird_deadline, contact_phone_1, contact_phone_2, is_active)
                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)"
                     );
-                    $stmt->execute([$name, $date, $venue, $format, $fee, $ebFee, $currency, $deadline, $ebDeadline, $phone1 ?: null, $phone2 ?: null]);
-                    $success = 'Tournament created successfully.';
+                    $insertStmt->execute([$name, $date, $venue, $format, $fee, $ebFee, $currency, $deadline, $ebDeadline, $phone1 ?: null, $phone2 ?: null]);
+                    $tournamentId = (int)$pdo->lastInsertId();
                 } else {
-                    $stmt = $pdo->prepare(
-                        "UPDATE tournaments 
-                         SET name = ?, date = ?, venue = ?, format = ?, fee = ?, early_bird_fee = ?, currency = ?, deadline = ?, early_bird_deadline = ?, contact_phone_1 = ?, contact_phone_2 = ?
-                         WHERE id = ?"
-                    );
-                    $stmt->execute([$name, $date, $venue, $format, $fee, $ebFee, $currency, $deadline, $ebDeadline, $phone1 ?: null, $phone2 ?: null, $id]);
-                    $success = 'Tournament updated successfully.';
+                    $assetStmt = $pdo->prepare('SELECT logo_path, hero_background_path FROM tournaments WHERE id = ?');
+                    $assetStmt->execute([$id]);
+                    $assetRow = $assetStmt->fetch() ?: [];
+                    $logoPath = $assetRow['logo_path'] ?? null;
+                    $heroBackgroundPath = $assetRow['hero_background_path'] ?? null;
                 }
+
+                if ($logoService->hasUpload($_FILES['logo'] ?? [])) {
+                    $newLogoPath = $logoService->saveForTournament($_FILES['logo'], $tournamentId);
+                    $logoService->deleteIfExists(is_string($logoPath) ? $logoPath : null);
+                    $logoPath = $newLogoPath;
+                }
+
+                if ($heroBackgroundService->hasUpload($_FILES['hero_background'] ?? [])) {
+                    $newHeroBgPath = $heroBackgroundService->saveForTournament($_FILES['hero_background'], $tournamentId);
+                    $heroBackgroundService->deleteIfExists(is_string($heroBackgroundPath) ? $heroBackgroundPath : null);
+                    $heroBackgroundPath = $newHeroBgPath;
+                }
+
+                $updateStmt = $pdo->prepare(
+                    "UPDATE tournaments
+                     SET name = ?, date = ?, venue = ?, format = ?, fee = ?, early_bird_fee = ?, currency = ?, deadline = ?, early_bird_deadline = ?, contact_phone_1 = ?, contact_phone_2 = ?, logo_path = ?, hero_background_path = ?
+                     WHERE id = ?"
+                );
+                $updateStmt->execute([
+                    $name, $date, $venue, $format, $fee, $ebFee, $currency, $deadline, $ebDeadline,
+                    $phone1 ?: null, $phone2 ?: null, $logoPath, $heroBackgroundPath, $tournamentId,
+                ]);
+
+                $success = $action === 'create'
+                    ? 'Tournament created successfully.'
+                    : 'Tournament updated successfully.';
+            } catch (RuntimeException $e) {
+                $errors[] = $e->getMessage();
             } catch (Throwable $e) {
                 $errors[] = 'Database operation failed: ' . $e->getMessage();
             }
@@ -274,6 +326,59 @@ if (empty($_SESSION['csrf_token'])) {
       padding: 0.35em 0.75em;
       border-radius: 999px;
     }
+    .logo-upload-zone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 0.75rem;
+      padding: 1rem;
+      text-align: center;
+      background: #f8fafc;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .logo-upload-zone:hover,
+    .logo-upload-zone.is-dragover {
+      border-color: var(--gold);
+      background: #fffbeb;
+    }
+    .logo-upload-zone__preview {
+      max-height: 72px;
+      max-width: 100%;
+      object-fit: contain;
+      margin-top: 0.5rem;
+      display: none;
+    }
+    .logo-upload-zone__preview.is-visible {
+      display: inline-block;
+    }
+    .logo-upload-zone__current {
+      max-height: 64px;
+      max-width: 100%;
+      object-fit: contain;
+      margin-bottom: 0.5rem;
+      border-radius: 0.35rem;
+      background: #fff;
+      padding: 0.35rem;
+      border: 1px solid #e2e8f0;
+    }
+    .hero-bg-upload-zone__current {
+      width: 100%;
+      max-height: 120px;
+      object-fit: cover;
+      margin-bottom: 0.5rem;
+      border-radius: 0.5rem;
+      border: 1px solid #e2e8f0;
+    }
+    .hero-bg-upload-zone__preview {
+      width: 100%;
+      max-height: 100px;
+      object-fit: cover;
+      margin-top: 0.5rem;
+      border-radius: 0.45rem;
+      display: none;
+    }
+    .hero-bg-upload-zone__preview.is-visible {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -343,7 +448,7 @@ if (empty($_SESSION['csrf_token'])) {
                     </td>
                     <td>
                       <span class="d-block text-secondary"><i class="bi bi-calendar-event me-1"></i><?= esc($t['date']) ?></span>
-                      <span class="d-block text-muted small"><i class="bi bi-hourglass-split me-1"></i>Deadline: <?= esc($t['deadline']) ?></span>
+                      <span class="d-block text-muted small"><i class="bi bi-hourglass-split me-1"></i>Deadline: <?= esc(formatTournamentDeadline($t['deadline'])) ?></span>
                     </td>
                     <td>
                       <strong><?= esc($t['currency']) ?> <?= number_format((float)$t['fee'], 0) ?></strong>
@@ -407,7 +512,7 @@ if (empty($_SESSION['csrf_token'])) {
           </h5>
         </div>
         <div class="card-body p-4">
-          <form method="POST">
+          <form method="POST" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="<?= esc($_SESSION['csrf_token']) ?>" />
             <input type="hidden" name="action" value="<?= $editTournament ? 'update' : 'create' ?>" />
             <?php if ($editTournament): ?>
@@ -434,6 +539,52 @@ if (empty($_SESSION['csrf_token'])) {
               <input type="text" class="form-control form-control-sm" id="format" name="format" required placeholder="e.g. Best Ball Scramble (Shotgun Start)" value="<?= esc($editTournament['format'] ?? '') ?>" />
             </div>
 
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Tournament Logo</label>
+              <?php
+                $currentLogoUrl = '';
+                if (!empty($editTournament['logo_path'])) {
+                    $currentLogoUrl = APP_BASE_URL . '/' . ltrim((string)$editTournament['logo_path'], '/');
+                }
+              ?>
+              <?php if ($currentLogoUrl !== ''): ?>
+                <div class="mb-2 text-center">
+                  <img src="<?= esc($currentLogoUrl) ?>" alt="Current tournament logo" class="logo-upload-zone__current" id="currentLogoPreview" />
+                  <div class="small text-muted">Current logo — upload below to replace</div>
+                </div>
+              <?php endif; ?>
+              <label for="logo" class="logo-upload-zone d-block mb-1" id="logoUploadZone">
+                <i class="bi bi-cloud-arrow-up fs-4 text-secondary d-block mb-1"></i>
+                <span class="small fw-semibold text-secondary"><?= $currentLogoUrl !== '' ? 'Replace logo' : 'Upload logo' ?></span>
+                <span class="d-block small text-muted mt-1">PNG or JPG, max 5MB. Wide logos work best (approx. 800×200px).</span>
+                <img src="" alt="" class="logo-upload-zone__preview" id="logoPreview" />
+              </label>
+              <input type="file" class="form-control form-control-sm d-none" id="logo" name="logo" accept="image/jpeg,image/png,image/gif,image/webp" />
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Hero Background Image</label>
+              <?php
+                $currentHeroBgUrl = '';
+                if (!empty($editTournament['hero_background_path'])) {
+                    $currentHeroBgUrl = APP_BASE_URL . '/' . ltrim((string)$editTournament['hero_background_path'], '/');
+                }
+              ?>
+              <?php if ($currentHeroBgUrl !== ''): ?>
+                <div class="mb-2">
+                  <img src="<?= esc($currentHeroBgUrl) ?>" alt="Current hero background" class="hero-bg-upload-zone__current" id="currentHeroBgPreview" />
+                  <div class="small text-muted">Current hero background — upload below to replace</div>
+                </div>
+              <?php endif; ?>
+              <label for="hero_background" class="logo-upload-zone d-block mb-1" id="heroBgUploadZone">
+                <i class="bi bi-image fs-4 text-secondary d-block mb-1"></i>
+                <span class="small fw-semibold text-secondary"><?= $currentHeroBgUrl !== '' ? 'Replace hero background' : 'Upload hero background' ?></span>
+                <span class="d-block small text-muted mt-1">JPG or PNG, max 8MB. Landscape photos work best (approx. 1920×800px).</span>
+                <img src="" alt="" class="hero-bg-upload-zone__preview" id="heroBgPreview" />
+              </label>
+              <input type="file" class="form-control form-control-sm d-none" id="hero_background" name="hero_background" accept="image/jpeg,image/png,image/webp" />
+            </div>
+
             <div class="row g-2 mb-3">
               <div class="col-sm-8">
                 <label for="fee" class="form-label fw-semibold">Registration Fee <span class="text-danger">*</span></label>
@@ -458,7 +609,8 @@ if (empty($_SESSION['csrf_token'])) {
 
             <div class="mb-3">
               <label for="deadline" class="form-label fw-semibold">Registration Deadline <span class="text-danger">*</span></label>
-              <input type="text" class="form-control form-control-sm" id="deadline" name="deadline" required placeholder="e.g. Wednesday, 29 April 2026" value="<?= esc($editTournament['deadline'] ?? '') ?>" />
+              <input type="datetime-local" class="form-control form-control-sm" id="deadline" name="deadline" required value="<?= isset($editTournament['deadline']) ? date('Y-m-d\TH:i', strtotime((string)$editTournament['deadline'])) : '' ?>" />
+              <div class="form-text">Used for the homepage countdown and displayed closing date.</div>
             </div>
 
             <div class="mb-3">
@@ -488,5 +640,100 @@ if (empty($_SESSION['csrf_token'])) {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function () {
+  const logoInput = document.getElementById('logo');
+  const logoPreview = document.getElementById('logoPreview');
+  const logoZone = document.getElementById('logoUploadZone');
+  const currentLogo = document.getElementById('currentLogoPreview');
+
+  if (!logoInput || !logoPreview || !logoZone) return;
+
+  function showPreview(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      logoPreview.src = e.target.result;
+      logoPreview.classList.add('is-visible');
+      if (currentLogo) currentLogo.style.opacity = '0.45';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  logoInput.addEventListener('change', function () {
+    showPreview(logoInput.files && logoInput.files[0]);
+  });
+
+  ['dragenter', 'dragover'].forEach(function (evtName) {
+    logoZone.addEventListener(evtName, function (e) {
+      e.preventDefault();
+      logoZone.classList.add('is-dragover');
+    });
+  });
+
+  ['dragleave', 'drop'].forEach(function (evtName) {
+    logoZone.addEventListener(evtName, function (e) {
+      e.preventDefault();
+      logoZone.classList.remove('is-dragover');
+    });
+  });
+
+  logoZone.addEventListener('drop', function (e) {
+    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!file) return;
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    logoInput.files = dt.files;
+    showPreview(file);
+  });
+})();
+
+(function () {
+  const bgInput = document.getElementById('hero_background');
+  const bgPreview = document.getElementById('heroBgPreview');
+  const bgZone = document.getElementById('heroBgUploadZone');
+  const currentBg = document.getElementById('currentHeroBgPreview');
+
+  if (!bgInput || !bgPreview || !bgZone) return;
+
+  function showBgPreview(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      bgPreview.src = e.target.result;
+      bgPreview.classList.add('is-visible');
+      if (currentBg) currentBg.style.opacity = '0.45';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  bgInput.addEventListener('change', function () {
+    showBgPreview(bgInput.files && bgInput.files[0]);
+  });
+
+  ['dragenter', 'dragover'].forEach(function (evtName) {
+    bgZone.addEventListener(evtName, function (e) {
+      e.preventDefault();
+      bgZone.classList.add('is-dragover');
+    });
+  });
+
+  ['dragleave', 'drop'].forEach(function (evtName) {
+    bgZone.addEventListener(evtName, function (e) {
+      e.preventDefault();
+      bgZone.classList.remove('is-dragover');
+    });
+  });
+
+  bgZone.addEventListener('drop', function (e) {
+    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!file) return;
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    bgInput.files = dt.files;
+    showBgPreview(file);
+  });
+})();
+</script>
 </body>
 </html>

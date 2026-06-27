@@ -16,6 +16,9 @@ if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
+$adminBase = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/admin/index.php')), '/');
+$authenticateUrl = $adminBase . '/admin_authenticate.php';
+
 $error = trim((string)($_GET['error'] ?? ''));
 ?>
 <!DOCTYPE html>
@@ -73,7 +76,7 @@ $error = trim((string)($_GET['error'] ?? ''));
     </div>
   <?php endif; ?>
 
-  <form action="./admin_authenticate.php" method="POST">
+  <form action="<?= htmlspecialchars($authenticateUrl, ENT_QUOTES, 'UTF-8') ?>" method="POST">
     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>" />
     
     <div class="mb-3">

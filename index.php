@@ -31,38 +31,24 @@ require_once __DIR__ . '/config/config.php';
       --text-dark:   #1a1a1a;
     }
 
-    /* ── Hero ────────────────────────────────────────────────────────────── */
-    .hero {
-      background: linear-gradient(160deg, var(--green-dark) 0%, #144e58 60%, #1e6b78 100%);
-      color: #fff;
-      padding: 5rem 1rem 4rem;
-      text-align: center;
+    /* ── Hero (homepage overrides) ───────────────────────────────────── */
+    .hero-home {
+      padding: 3.5rem 1rem 3rem;
+    }
+    .hero-home__content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       position: relative;
-      overflow: hidden;
+      z-index: 2;
     }
-    .hero::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: url('<?= htmlspecialchars(APP_BASE_URL . '/assets/images/event-details.jpg', ENT_QUOTES, 'UTF-8') ?>') center/cover no-repeat;
-      opacity: 0.18;
-    }
-    .hero-title {
-      font-size: clamp(1.5rem, 4vw, 2.8rem);
+    .hero-title--fallback {
+      font-size: clamp(1.35rem, 4vw, 2.2rem);
       font-weight: 700;
       letter-spacing: .03em;
       text-shadow: 0 2px 8px rgba(0,0,0,.4);
-      margin-top: 1.25rem;
-      position: relative;
-      z-index: 2;
+      margin: 0 0 0.25rem;
       color: #fff;
-    }
-    .hero-subtitle {
-      font-size: clamp(.95rem, 2.5vw, 1.15rem);
-      opacity: .9;
-      margin-top: .4rem;
-      position: relative;
-      z-index: 2;
     }
     /* ── Section titles ─────────────────────────────────────────────────── */
     .section-title {
@@ -373,18 +359,8 @@ require_once __DIR__ . '/config/config.php';
         padding-right: 0.65rem;
       }
 
-      .hero {
-        padding: 3rem 0.65rem 2.5rem;
-      }
-      .hero-title {
-        font-size: clamp(1.25rem, 5.5vw, 1.75rem);
-        margin-top: 0.5rem;
-      }
-      .deadline-chip {
-        font-size: 0.78rem;
-        padding: 0.35rem 0.6rem;
-        line-height: 1.4;
-        max-width: 100%;
+      .hero-home {
+        padding: 2.25rem 0.65rem 2rem;
       }
       .btn-register.btn-lg {
         font-size: 0.95rem;
@@ -519,17 +495,66 @@ require_once __DIR__ . '/config/config.php';
   </div>
 <?php endif; ?>
 
+<?php
+$heroBackgroundUrl = defined('EVENT_HERO_BACKGROUND_URL') && EVENT_HERO_BACKGROUND_URL !== ''
+    ? EVENT_HERO_BACKGROUND_URL
+    : APP_BASE_URL . '/assets/images/event-details.jpg';
+?>
 <!-- ══════════════════════  HERO  ══════════════════════ -->
-<section class="hero">
+<section
+  class="hero hero-home"
+  aria-label="Event registration"
+  style="--hero-bg-url: url('<?= htmlspecialchars($heroBackgroundUrl, ENT_QUOTES, 'UTF-8') ?>')"
+>
   <div class="container container--landing position-relative">
-    <h1 class="hero-title"><?= htmlspecialchars(EVENT_NAME, ENT_QUOTES, 'UTF-8') ?></h1>
-    <div class="mt-3">
-      <span class="deadline-chip"><i class="bi bi-clock"></i>&nbsp; Registration Deadline: <?= htmlspecialchars(EVENT_DEADLINE, ENT_QUOTES, 'UTF-8') ?> (or until slots are filled)</span>
-    </div>
-    <div class="mt-4">
-      <a href="#registration-options" class="btn-register btn-lg">
+    <div class="hero-home__content">
+
+      <?php if (defined('EVENT_LOGO_URL') && EVENT_LOGO_URL !== ''): ?>
+        <div class="hero-logo-wrap">
+          <img
+            class="hero-logo"
+            src="<?= htmlspecialchars(EVENT_LOGO_URL, ENT_QUOTES, 'UTF-8') ?>"
+            alt="<?= htmlspecialchars(EVENT_NAME, ENT_QUOTES, 'UTF-8') ?>"
+          />
+        </div>
+      <?php else: ?>
+        <h1 class="hero-title hero-title--fallback"><?= htmlspecialchars(EVENT_NAME, ENT_QUOTES, 'UTF-8') ?></h1>
+      <?php endif; ?>
+
+      <a href="#registration-options" class="btn-register btn-register--hero btn-lg" id="heroRegisterBtn">
         <i class="bi bi-person-plus-fill me-1"></i> Register Now
       </a>
+
+      <p class="hero-closing-info">
+        <i class="bi bi-calendar-x" aria-hidden="true"></i>
+        Registration closes on <strong><?= htmlspecialchars(EVENT_DEADLINE, ENT_QUOTES, 'UTF-8') ?></strong> (or until slots are filled)
+      </p>
+
+      <?php if (defined('REGISTRATION_DEADLINE_AT') && REGISTRATION_DEADLINE_AT): ?>
+        <div class="hero-countdown" role="timer" aria-live="polite" data-registration-countdown-wrap>
+          <span class="hero-countdown__label">Closes in</span>
+          <div class="hero-countdown__segments">
+            <div class="hero-countdown__segment">
+              <span class="hero-countdown__value" data-reg-days>00</span>
+              <span class="hero-countdown__unit">Days</span>
+            </div>
+            <div class="hero-countdown__segment">
+              <span class="hero-countdown__value" data-reg-hours>00</span>
+              <span class="hero-countdown__unit">Hours</span>
+            </div>
+            <div class="hero-countdown__segment">
+              <span class="hero-countdown__value" data-reg-mins>00</span>
+              <span class="hero-countdown__unit">Mins</span>
+            </div>
+            <div class="hero-countdown__segment">
+              <span class="hero-countdown__value" data-reg-secs>00</span>
+              <span class="hero-countdown__unit">Secs</span>
+            </div>
+          </div>
+          <div class="hero-countdown__closed d-none" data-registration-closed>Registration Closed</div>
+        </div>
+      <?php endif; ?>
+
     </div>
   </div>
 </section>
@@ -831,6 +856,60 @@ require_once __DIR__ . '/config/config.php';
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<?php if (defined('REGISTRATION_DEADLINE_AT') && REGISTRATION_DEADLINE_AT): ?>
+<script>
+(function () {
+  const deadline = new Date("<?= date('c', strtotime((string)REGISTRATION_DEADLINE_AT)) ?>").getTime();
+  const wrap = document.querySelector('[data-registration-countdown-wrap]');
+  if (!wrap || Number.isNaN(deadline)) return;
+
+  const daysEl = wrap.querySelector('[data-reg-days]');
+  const hoursEl = wrap.querySelector('[data-reg-hours]');
+  const minsEl = wrap.querySelector('[data-reg-mins]');
+  const secsEl = wrap.querySelector('[data-reg-secs]');
+  const segments = wrap.querySelector('.hero-countdown__segments');
+  const closedEl = wrap.querySelector('[data-registration-closed]');
+  const ctaBtn = document.getElementById('heroRegisterBtn');
+  const pad = (num) => String(num).padStart(2, '0');
+
+  function setUrgent(isUrgent) {
+    wrap.classList.toggle('hero-countdown--urgent', isUrgent);
+  }
+
+  function showClosed() {
+    if (segments) segments.classList.add('d-none');
+    if (closedEl) closedEl.classList.remove('d-none');
+    if (ctaBtn) {
+      ctaBtn.classList.add('btn-register--disabled');
+      ctaBtn.setAttribute('aria-disabled', 'true');
+    }
+  }
+
+  function update() {
+    const diff = deadline - Date.now();
+    if (diff <= 0) {
+      showClosed();
+      return;
+    }
+
+    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+    if (daysEl) daysEl.textContent = pad(d);
+    if (hoursEl) hoursEl.textContent = pad(h);
+    if (minsEl) minsEl.textContent = pad(m);
+    if (secsEl) secsEl.textContent = pad(s);
+    setUrgent(diff < 24 * 60 * 60 * 1000);
+  }
+
+  update();
+  setInterval(update, 1000);
+})();
+</script>
+<?php endif; ?>
 
 <?php if (IS_EARLY_BIRD_ACTIVE && EARLY_BIRD_DEADLINE): ?>
 <script>

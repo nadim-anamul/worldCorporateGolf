@@ -17,27 +17,45 @@ $currency = htmlspecialchars((string)EVENT_CURRENCY, ENT_QUOTES, 'UTF-8');
 $standardFmt = number_format((float)EVENT_FEE);
 $currentFmt = number_format((float)CURRENT_FEE);
 $savingsFmt = number_format((float)EVENT_FEE - (float)CURRENT_FEE);
+$countdownIdEsc = htmlspecialchars($countdownId, ENT_QUOTES, 'UTF-8');
 ?>
 
 <div class="early-bird-bar">
   <div class="container">
     <div class="early-bird-bar__inner">
-      <div class="early-bird-bar__message-wrap">
-        <p class="early-bird-bar__line">
-          <i class="bi bi-lightning-charge-fill early-bird-bar__icon" aria-hidden="true"></i>
-          <strong>Early Bird Offer Active!</strong>
-          <span class="early-bird-bar__text">Save <?= $currency ?> <?= $savingsFmt ?>/- by registering now. Offer ends in:</span>
-        </p>
-        <span class="early-bird-bar__countdown font-monospace">
-          <span id="<?= htmlspecialchars($countdownId, ENT_QUOTES, 'UTF-8') ?>" data-early-bird-countdown>00d 00h 00m 00s</span>
-        </span>
-      </div>
-      <div class="early-bird-bar__pricing" aria-label="Early bird pricing">
-        <div class="price-stack price-stack--bar-dark">
-          <div class="price-stack__original"><?= $currency ?> <?= $standardFmt ?></div>
-          <div class="price-stack__offer"><?= $currency ?> <?= $currentFmt ?></div>
+
+      <div class="early-bird-bar__desktop d-none d-md-flex">
+        <div class="early-bird-bar__message-wrap">
+          <p class="early-bird-bar__line">
+            <i class="bi bi-lightning-charge-fill early-bird-bar__icon early-bird-bar__icon--animated" aria-hidden="true"></i>
+            <strong>Early Bird Offer Active!</strong>
+            <span class="early-bird-bar__text">Save <?= $currency ?> <?= $savingsFmt ?>/- by registering now. Offer ends in:</span>
+          </p>
+          <span class="early-bird-bar__countdown font-monospace">
+            <span id="<?= $countdownIdEsc ?>" data-early-bird-countdown>00d 00h 00m 00s</span>
+          </span>
+        </div>
+        <div class="early-bird-bar__pricing" aria-label="Early bird pricing">
+          <div class="price-stack price-stack--bar-dark">
+            <div class="price-stack__original"><?= $currency ?> <?= $standardFmt ?></div>
+            <div class="price-stack__offer"><?= $currency ?> <?= $currentFmt ?></div>
+          </div>
         </div>
       </div>
+
+      <div class="early-bird-bar__mobile d-md-none">
+        <div class="early-bird-bar__mobile-row">
+          <i class="bi bi-lightning-charge-fill early-bird-bar__icon early-bird-bar__icon--animated" aria-hidden="true"></i>
+          <strong class="early-bird-bar__mobile-label">Early Bird Offer</strong>
+          <div class="early-bird-bar__pricing early-bird-bar__pricing--inline" aria-label="Early bird pricing">
+            <div class="price-stack price-stack--bar-dark price-stack--bar-dark-inline">
+              <span class="price-stack__original"><?= $currency ?> <?= $standardFmt ?></span>
+              <span class="price-stack__offer"><?= $currency ?> <?= $currentFmt ?></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>

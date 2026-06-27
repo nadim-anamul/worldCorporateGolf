@@ -10,10 +10,12 @@ CREATE TABLE IF NOT EXISTS `tournaments` (
     `date`                VARCHAR(100)  NOT NULL,
     `venue`               VARCHAR(255)  NOT NULL,
     `format`              VARCHAR(255)  NOT NULL,
+    `logo_path`           VARCHAR(255)  DEFAULT NULL,
+    `hero_background_path` VARCHAR(255)  DEFAULT NULL,
     `fee`                 DECIMAL(10,2) NOT NULL DEFAULT 2000.00,
     `early_bird_fee`      DECIMAL(10,2) DEFAULT NULL,
     `currency`            VARCHAR(10)   NOT NULL DEFAULT 'BDT',
-    `deadline`            VARCHAR(120)  NOT NULL,
+    `deadline`            DATETIME      NOT NULL,
     `early_bird_deadline` DATETIME      DEFAULT NULL,
     `contact_phone_1`     VARCHAR(50)   DEFAULT NULL,
     `contact_phone_2`     VARCHAR(50)   DEFAULT NULL,
@@ -183,7 +185,7 @@ ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`);
 
 -- First Tournament (Active by default)
 INSERT INTO `tournaments` (`id`, `name`, `date`, `venue`, `format`, `fee`, `currency`, `deadline`, `contact_phone_1`, `contact_phone_2`, `is_active`)
-VALUES (1, '2nd GolfHouse Diplomatic Cup 2026', 'Saturday, 02 May 2026', 'Jolshiri Golf Club, Dhaka', 'Best Ball Scramble (Shotgun Start)', 2000.00, 'BDT', 'Wednesday, 29 April 2026', '01610 801 081', '01842 324 232', 1)
+VALUES (1, '2nd GolfHouse Diplomatic Cup 2026', 'Saturday, 02 May 2026', 'Jolshiri Golf Club, Dhaka', 'Best Ball Scramble (Shotgun Start)', 2000.00, 'BDT', '2026-04-29 23:59:59', '01610 801 081', '01842 324 232', 1)
 ON DUPLICATE KEY UPDATE 
     `name` = VALUES(`name`),
     `date` = VALUES(`date`),

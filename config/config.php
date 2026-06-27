@@ -78,7 +78,22 @@ _def('EVENT_NAME', $activeTournament['name'] ?? $_env['EVENT_NAME'] ?? 'Golf Tou
 _def('EVENT_DATE', $activeTournament['date'] ?? $_env['EVENT_DATE'] ?? 'TBA');
 _def('EVENT_VENUE', $activeTournament['venue'] ?? $_env['EVENT_VENUE'] ?? 'TBA');
 _def('EVENT_FORMAT', $activeTournament['format'] ?? $_env['EVENT_FORMAT'] ?? 'TBA');
-_def('EVENT_DEADLINE', $activeTournament['deadline'] ?? $_env['EVENT_DEADLINE'] ?? 'TBA');
+
+$_deadlineAt = $activeTournament['deadline'] ?? null;
+if ($_deadlineAt === null && isset($_env['EVENT_DEADLINE'])) {
+    $_parsedDeadline = strtotime((string)$_env['EVENT_DEADLINE']);
+    if ($_parsedDeadline !== false) {
+        $_deadlineAt = date('Y-m-d H:i:s', $_parsedDeadline);
+    }
+}
+_def('REGISTRATION_DEADLINE_AT', $_deadlineAt);
+_def('EVENT_DEADLINE', $_deadlineAt
+    ? date('l, j F Y', strtotime((string)$_deadlineAt))
+    : ($_env['EVENT_DEADLINE'] ?? 'TBA'));
+
+$_logoPath = (string)($activeTournament['logo_path'] ?? '');
+$_heroBackgroundPath = (string)($activeTournament['hero_background_path'] ?? '');
+
 _def('EVENT_FEE', (float)($activeTournament['fee'] ?? $_env['EVENT_FEE'] ?? 2000));
 _def('EVENT_CURRENCY', $activeTournament['currency'] ?? $_env['EVENT_CURRENCY'] ?? 'BDT');
 _def('CONTACT_PHONE_1', $activeTournament['contact_phone_1'] ?? $_env['CONTACT_PHONE_1'] ?? '');
@@ -118,6 +133,10 @@ _def('SSL_IS_SANDBOX', $_isSandbox);
 
 // App settings
 _def('APP_BASE_URL', rtrim($_env['APP_BASE_URL'] ?? 'http://localhost:8000', '/'));
+_def('EVENT_LOGO_URL', $_logoPath !== '' ? (APP_BASE_URL . '/' . ltrim($_logoPath, '/')) : '');
+_def('EVENT_HERO_BACKGROUND_URL', $_heroBackgroundPath !== ''
+    ? (APP_BASE_URL . '/' . ltrim($_heroBackgroundPath, '/'))
+    : (APP_BASE_URL . '/assets/images/event-details.jpg'));
 
 // Admin Settings
 _def('ADMIN_USER', $_env['ADMIN_USER'] ?? 'helloadmin');
@@ -128,7 +147,7 @@ _def('SMS_API_URL', $_env['SMS_API_URL'] ?? '');
 _def('SMS_API_TOKEN', $_env['SMS_API_TOKEN'] ?? '');
 _def('SMS_MESSAGE_TEMPLATE', $_env['SMS_MESSAGE_TEMPLATE'] ?? '');
 
-unset($_env, $_isSandbox, $dbHost, $dbPort, $dbName, $dbUser, $dbPass, $activeTournament);
+unset($_env, $_isSandbox, $dbHost, $dbPort, $dbName, $dbUser, $dbPass, $activeTournament, $_logoPath, $_heroBackgroundPath, $_deadlineAt, $_parsedDeadline);
 
 // Return config array for SSLCommerz compatibility
 return [
