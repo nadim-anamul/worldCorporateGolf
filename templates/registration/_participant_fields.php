@@ -26,7 +26,7 @@
           </div>
           <div class="col-md-6">
             <label for="nationality" class="form-label">Nationality <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="nationality" required placeholder="Embassy country or origin" />
+            <input type="text" class="form-control" id="nationality" required placeholder="Country or origin" />
           </div>
         </div>
         <div class="row mb-3">
@@ -36,7 +36,7 @@
           </div>
           <div class="col-md-6">
             <label for="organization" class="form-label">Organization <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="organization" required placeholder="Embassy name or Corporate office" />
+            <input type="text" class="form-control" id="organization" required placeholder="Company name or Corporate office" />
           </div>
         </div>
         <div class="row mb-3">

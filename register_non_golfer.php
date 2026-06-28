@@ -73,7 +73,7 @@ require_once __DIR__ . '/templates/header.php';
             </div>
           </div>
           <div class="col-md-6">
-            <label for="puttingContest" class="form-label">Interested in Guest Putting Contest? <span class="text-danger">*</span></label>
+            <label for="puttingContest" class="form-label">Putting Contest? <span class="text-danger">*</span></label>
             <select class="form-select" id="puttingContest" required>
               <option value="Yes" selected>Yes</option>
               <option value="No">No</option>
