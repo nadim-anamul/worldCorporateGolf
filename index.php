@@ -7,6 +7,16 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/config/config.php';
+require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/src/TournamentSponsorRepository.php';
+
+$tournamentSponsors = [];
+try {
+    $sponsorRepo = new TournamentSponsorRepository(db());
+    $tournamentSponsors = $sponsorRepo->listActiveForTournament(ACTIVE_TOURNAMENT_ID);
+} catch (Throwable $e) {
+    error_log('[index.php] Failed to load tournament sponsors: ' . $e->getMessage());
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -874,55 +884,7 @@ $heroBackgroundUrl = defined('EVENT_HERO_BACKGROUND_URL') && EVENT_HERO_BACKGROU
   </div>
 </section>
 
-<!-- ══════════════════════  PARTNERS  ══════════════════════ -->
-<section class="partner-section">
-  <div class="container text-center mb-4">
-    <h5 class="fw-bold text-uppercase mb-0 partner-section__heading"><i class="bi bi-shield-check me-1 text-gold"></i> Event Partners &amp; Sponsors</h5>
-  </div>
-  <div class="marquee-container">
-    <div class="marquee-content">
-      <!-- Duplicate logos twice for a smooth looping marquee (two identical groups of 6 logos for seamless translation) -->
-      <!-- Group 1 -->
-      <a href="https://golfhouse.com.bd" target="_blank" class="partner-logo-link">
-        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/golfhouse-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="GolfHouse" />
-      </a>
-      <a href="https://worldcorporategolftour.com" target="_blank" class="partner-logo-link">
-        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/corporate-tour-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="Corporate Tour" />
-      </a>
-      <a href="https://jolshirigolfclub.com" target="_blank" class="partner-logo-link">
-        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/jolshiri-golf-club-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="Jolshiri Golf Club" />
-      </a>
-      <a href="https://golfhouse.com.bd" target="_blank" class="partner-logo-link">
-        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/golfhouse-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="GolfHouse" />
-      </a>
-      <a href="https://worldcorporategolftour.com" target="_blank" class="partner-logo-link">
-        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/corporate-tour-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="Corporate Tour" />
-      </a>
-      <a href="https://jolshirigolfclub.com" target="_blank" class="partner-logo-link">
-        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/jolshiri-golf-club-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="Jolshiri Golf Club" />
-      </a>
-      <!-- Group 2 (identical copy) -->
-      <a href="https://golfhouse.com.bd" target="_blank" class="partner-logo-link">
-        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/golfhouse-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="GolfHouse" />
-      </a>
-      <a href="https://worldcorporategolftour.com" target="_blank" class="partner-logo-link">
-        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/corporate-tour-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="Corporate Tour" />
-      </a>
-      <a href="https://jolshirigolfclub.com" target="_blank" class="partner-logo-link">
-        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/jolshiri-golf-club-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="Jolshiri Golf Club" />
-      </a>
-      <a href="https://golfhouse.com.bd" target="_blank" class="partner-logo-link">
-        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/golfhouse-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="GolfHouse" />
-      </a>
-      <a href="https://worldcorporategolftour.com" target="_blank" class="partner-logo-link">
-        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/corporate-tour-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="Corporate Tour" />
-      </a>
-      <a href="https://jolshirigolfclub.com" target="_blank" class="partner-logo-link">
-        <img src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/jolshiri-golf-club-logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="Jolshiri Golf Club" />
-      </a>
-    </div>
-  </div>
-</section>
+<?php require __DIR__ . '/templates/_partner_marquee.php'; ?>
 
 <!-- ══════════════════════  FOOTER  ══════════════════════ -->
 <footer class="text-center">

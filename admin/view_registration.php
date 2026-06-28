@@ -258,6 +258,7 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
   <div class="d-flex gap-2 flex-wrap">
     <a href="tournaments.php" class="btn btn-sm btn-outline-light"><i class="bi bi-trophy me-1"></i>Tournaments</a>
     <a href="tee_time_settings.php" class="btn btn-sm btn-outline-light"><i class="bi bi-calendar3 me-1"></i>Tee Times</a>
+    <a href="sponsor_settings.php" class="btn btn-sm btn-outline-light"><i class="bi bi-shield-check me-1"></i>Sponsors</a>
     <a href="non_golfer_window_settings.php" class="btn btn-sm btn-outline-light"><i class="bi bi-clock me-1"></i>Arrival Windows</a>
     <a href="admin_logout.php" class="btn btn-sm btn-outline-light"><i class="bi bi-box-arrow-right me-1"></i>Logout</a>
   </div>

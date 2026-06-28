@@ -166,7 +166,22 @@ CREATE TABLE IF NOT EXISTS `arrival_window_options_non_golfer` (
     FOREIGN KEY (`tournament_id`) REFERENCES `tournaments` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 6. General Application Settings table
+-- 6. Tournament sponsors / partners
+CREATE TABLE IF NOT EXISTS `tournament_sponsors` (
+    `id`             INT           AUTO_INCREMENT PRIMARY KEY,
+    `tournament_id`  INT           NOT NULL,
+    `name`           VARCHAR(255)  NOT NULL,
+    `website_url`    VARCHAR(512)  NOT NULL,
+    `logo_path`      VARCHAR(255)  NOT NULL,
+    `display_order`  INT           NOT NULL DEFAULT 0,
+    `is_active`      TINYINT(1)    NOT NULL DEFAULT 1,
+    `created_at`     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX `idx_sponsor_tournament` (`tournament_id`, `is_active`, `display_order`),
+    FOREIGN KEY (`tournament_id`) REFERENCES `tournaments` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 7. General Application Settings table
 CREATE TABLE IF NOT EXISTS `app_settings` (
     `setting_key`   VARCHAR(100) NOT NULL PRIMARY KEY,
     `setting_value` TEXT         NOT NULL,
@@ -224,3 +239,10 @@ ON DUPLICATE KEY UPDATE
     `slot_number` = VALUES(`slot_number`),
     `display_order` = VALUES(`display_order`),
     `is_active` = VALUES(`is_active`);
+
+-- Default sponsors for Tournament ID 1
+INSERT INTO `tournament_sponsors` (`tournament_id`, `name`, `website_url`, `logo_path`, `display_order`, `is_active`)
+VALUES
+    (1, 'GolfHouse', 'https://golfhouse.com.bd', 'assets/images/golfhouse-logo.png', 30, 1),
+    (1, 'Corporate Tour', 'https://worldcorporategolftour.com', 'assets/images/corporate-tour-logo.png', 20, 1),
+    (1, 'Jolshiri Golf Club', 'https://jolshirigolfclub.com', 'assets/images/jolshiri-golf-club-logo.png', 10, 1);
