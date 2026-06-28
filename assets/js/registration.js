@@ -57,9 +57,8 @@
     }
 
     function submitFormWithPhoto(photoFile) {
-      var scheduleSelected = form.querySelector(options.scheduleSelector);
       var payload = basePayload(form);
-      payload.scheduleGroup = scheduleSelected.value;
+      payload.scheduleGroup = options.skipSchedule ? 'N/A' : form.querySelector(options.scheduleSelector).value;
       if (typeof options.extendPayload === 'function') {
         options.extendPayload(payload);
       }
@@ -97,7 +96,7 @@
         showError('Please check that all required fields are filled correctly.');
         return;
       }
-      if (!form.querySelector(options.scheduleSelector)) {
+      if (!options.skipSchedule && !form.querySelector(options.scheduleSelector)) {
         showError(options.scheduleError);
         return;
       }

@@ -86,6 +86,9 @@ class ScheduleService
         }
 
         $windowId = (string)($registration['arrival_window'] ?? '');
+        if ($windowId === '' || strcasecmp($windowId, 'N/A') === 0) {
+            return 'N/A';
+        }
         $stmt = $this->pdo->prepare('SELECT title FROM arrival_window_options_non_golfer WHERE id = ? LIMIT 1');
         $stmt->execute([$windowId]);
         $row = $stmt->fetch();
@@ -102,10 +105,14 @@ class ScheduleService
             return $stmt->fetch() ?: null;
         }
 
+        $windowId = (string)($registration['arrival_window'] ?? '');
+        if ($windowId === '' || strcasecmp($windowId, 'N/A') === 0) {
+            return null;
+        }
         $stmt = $this->pdo->prepare(
             'SELECT title, window_time, group_photo_time FROM arrival_window_options_non_golfer WHERE id = ? LIMIT 1'
         );
-        $stmt->execute([(string)($registration['arrival_window'] ?? '')]);
+        $stmt->execute([$windowId]);
         $row = $stmt->fetch();
         if (!$row) {
             return null;

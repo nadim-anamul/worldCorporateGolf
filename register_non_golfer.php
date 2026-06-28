@@ -12,39 +12,6 @@ if (empty($_SESSION['csrf_token'])) {
 }
 
 require_once __DIR__ . '/config/config.php';
-require_once __DIR__ . '/config/db.php';
-require_once __DIR__ . '/src/ScheduleService.php';
-
-$windowOptions = [];
-
-try {
-    $schedule = new ScheduleService(db());
-    $windowOptions = $schedule->getNonGolferWindowOptions(ACTIVE_TOURNAMENT_ID);
-} catch (Throwable $e) {
-    error_log('[register_non_golfer.php] Failed to load DB window options: ' . $e->getMessage());
-}
-
-// Fallback window options if DB fails
-if (empty($windowOptions)) {
-    $windowOptions = [
-        [
-            'id'          => 'window1',
-            'title'       => 'Window-1',
-            'reporting'   => '8:00 AM - 10:30 AM',
-            'group_photo' => '09:45 AM',
-            'tee_off'     => '8:00 AM - 10:30 AM',
-            'slots_left'  => 30
-        ],
-        [
-            'id'          => 'window2',
-            'title'       => 'Window-2',
-            'reporting'   => '10:00 AM - 12:00 PM',
-            'group_photo' => '09:45 AM',
-            'tee_off'     => '10:00 AM - 12:00 PM',
-            'slots_left'  => 30
-        ]
-    ];
-}
 
 $pageTitle = 'Non-Golfer Registration';
 require_once __DIR__ . '/templates/header.php';
@@ -121,32 +88,6 @@ require_once __DIR__ . '/templates/header.php';
         </div>
       </div>
 
-      <?php
-        $scheduleHeading = 'Preferred Arrival Window';
-        require __DIR__ . '/templates/registration/_schedule_section_open.php';
-      ?>
-        <?php foreach ($windowOptions as $opt): ?>
-          <div class="col-12 col-md-6">
-            <input type="radio" name="arrivalWindow" id="window_<?= $opt['id'] ?>" class="slot-option-input d-none" value="<?= htmlspecialchars($opt['id'], ENT_QUOTES, 'UTF-8') ?>" <?= $opt['slots_left'] <= 0 ? 'disabled' : '' ?> />
-            <label for="window_<?= $opt['id'] ?>" class="w-100 h-100">
-              <div class="slot-option-card">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <h6 class="fw-bold mb-0 text-dark"><?= htmlspecialchars($opt['title'], ENT_QUOTES, 'UTF-8') ?></h6>
-                  <span class="badge-slots">
-                    <?= $opt['slots_left'] > 0 ? $opt['slots_left'] . ' slots left' : 'SOLD OUT' ?>
-                  </span>
-                </div>
-                <div class="slot-option-meta">
-                  <div><i class="bi bi-clock"></i> Reporting: <strong><?= htmlspecialchars($opt['reporting'], ENT_QUOTES, 'UTF-8') ?></strong></div>
-                  <div><i class="bi bi-camera"></i> Photos: <strong><?= htmlspecialchars($opt['group_photo'], ENT_QUOTES, 'UTF-8') ?></strong></div>
-                  <div><i class="bi bi-flag"></i> Tee Off: <strong><?= htmlspecialchars($opt['tee_off'], ENT_QUOTES, 'UTF-8') ?></strong></div>
-                </div>
-              </div>
-            </label>
-          </div>
-        <?php endforeach; ?>
-      <?php require __DIR__ . '/templates/registration/_schedule_section_close.php'; ?>
-
       <?php require __DIR__ . '/templates/registration/_submit_button.php'; ?>
 
     </form>
@@ -158,8 +99,7 @@ require_once __DIR__ . '/templates/header.php';
 <script src="<?= htmlspecialchars(APP_BASE_URL, ENT_QUOTES, 'UTF-8') ?>/assets/js/registration.js"></script>
 <script>
   RegistrationForm.init({
-    scheduleSelector: '[name="arrivalWindow"]:checked',
-    scheduleError: 'Please select your preferred arrival window.',
+    skipSchedule: true,
     extendPayload: function (payload) {
       payload.puttingContestInterest = document.getElementById('puttingContest').value;
     }

@@ -23,7 +23,9 @@ class RegistrationValidator
       'email'             => strtolower(trim(filter_var((string)($input['email'] ?? ''), FILTER_SANITIZE_EMAIL))),
       'mailing_address'   => sanitizeInput((string)($input['mailingAddress'] ?? '')),
       'tshirt_size'       => sanitizeInput((string)($input['tshirtSize'] ?? '')),
-      'schedule_group'    => sanitizeInput((string)($input['scheduleGroup'] ?? '')),
+      'schedule_group'    => $regType === 'non_golfer'
+        ? 'N/A'
+        : sanitizeInput((string)($input['scheduleGroup'] ?? '')),
       'name_on_polo'      => sanitizeInput((string)($input['nameOnPolo'] ?? '')),
       'handicap'          => $regType === 'golfer' ? sanitizeInput((string)($input['handicap'] ?? '')) : '',
       'golf_set_brand'    => $regType === 'golfer' ? sanitizeInput((string)($input['golfSetBrand'] ?? '')) : '',
@@ -38,11 +40,11 @@ class RegistrationValidator
       'Contact'      => $data['contact'],
       'Email'        => $data['email'],
       'T-Shirt Size' => $data['tshirt_size'],
-      'Schedule'     => $data['schedule_group'],
       'Name on Polo' => $data['name_on_polo'],
     ];
 
     if ($regType === 'golfer') {
+      $required['Schedule'] = $data['schedule_group'];
       $required['Handicap'] = $data['handicap'];
       $required['Golf Set Brand'] = $data['golf_set_brand'];
     } else {

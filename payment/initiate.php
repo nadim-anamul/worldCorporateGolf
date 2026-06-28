@@ -99,7 +99,7 @@ if (!$photoService->saveOptimized($file, $targetPath)) {
 $slotId = $data['schedule_group'];
 
 try {
-    $schedule->withSlotReservation($regType, $slotId, ACTIVE_TOURNAMENT_ID, function () use (
+    $saveRegistration = function () use (
         $repo, $regType, $data, $uniqueId, $tranId, $now, $amount, $currency, $relativeWebPath, $slotId
     ): void {
         $repo->deleteAbandonedByEmail($regType, $data['email'], ACTIVE_TOURNAMENT_ID);
@@ -137,7 +137,22 @@ try {
         }
 
         $repo->createPending($regType, $payload);
-    });
+    };
+
+    if ($regType === 'non_golfer') {
+        $pdo->beginTransaction();
+        try {
+            $saveRegistration();
+            $pdo->commit();
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
+    } else {
+        $schedule->withSlotReservation($regType, $slotId, ACTIVE_TOURNAMENT_ID, $saveRegistration);
+    }
 } catch (RuntimeException $e) {
     @unlink($targetPath);
     bail($e->getMessage());

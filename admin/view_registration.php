@@ -572,7 +572,8 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
     const labelKey = d.registration_type + '_' + (d.tournament_id || 1) + '_' + d.schedule_group;
     
     const eventSpecific = d.registration_type === 'non_golfer'
-      ? row('Arrival Window', scheduleLabels[labelKey] || d.schedule_group) + row('Guest Putting Contest Interest', d.putting_contest_interest) + row('Name on Polo', d.name_on_polo)
+      ? (d.schedule_group && d.schedule_group !== 'N/A' ? row('Arrival Window', scheduleLabels[labelKey] || d.schedule_group) : '')
+        + row('Guest Putting Contest Interest', d.putting_contest_interest) + row('Name on Polo', d.name_on_polo)
       : row('Tee Time Schedule', scheduleLabels[labelKey] || d.schedule_group) + row('Handicap', d.handicap) + row('Golf Set Brand', d.golf_set_brand) + row('Name on Polo', d.name_on_polo);
       
     const sponsorSection = d.player_category === 'Non-Diplomats'

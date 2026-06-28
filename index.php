@@ -74,6 +74,52 @@ require_once __DIR__ . '/config/config.php';
       margin-bottom: .5rem;
     }
 
+    .ceremony-banner {
+      background: var(--green-light);
+      border: 1px solid #9dc4cb;
+      border-radius: .75rem;
+    }
+    .ceremony-banner__heading {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      margin-bottom: 0.35rem;
+    }
+    .ceremony-banner__icon {
+      width: 1.5rem;
+      height: 1.5rem;
+      object-fit: contain;
+      flex-shrink: 0;
+      display: block;
+      filter: brightness(0) saturate(100%) invert(24%) sepia(35%) saturate(800%) hue-rotate(145deg) brightness(95%) contrast(95%);
+    }
+    .ceremony-banner__title {
+      color: var(--green-dark);
+      font-weight: 700;
+      font-size: 1.05rem;
+      line-height: 1.25;
+      margin: 0;
+    }
+    .ceremony-banner__details {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      font-size: .92rem;
+      padding-left: calc(2.1rem + 0.65rem);
+    }
+    @media (max-width: 575.98px) {
+      .ceremony-banner__icon {
+        width: 1.75rem;
+        height: 1.75rem;
+      }
+      .ceremony-banner__title {
+        font-size: 0.98rem;
+      }
+      .ceremony-banner__details {
+        padding-left: 0;
+      }
+    }
+
     /* ── Schedule cards ─────────────────────────────────────────────────── */
     .schedule-card {
       border: 2px solid var(--green-mid);
@@ -536,7 +582,7 @@ $heroBackgroundUrl = defined('EVENT_HERO_BACKGROUND_URL') && EVENT_HERO_BACKGROU
 
       <p class="hero-closing-info">
         <i class="bi bi-calendar-x" aria-hidden="true"></i>
-        Registration closes on <strong><?= htmlspecialchars(EVENT_DEADLINE, ENT_QUOTES, 'UTF-8') ?></strong> (or until slots are filled)
+        Registration Deadline: <strong><?= htmlspecialchars(EVENT_DEADLINE, ENT_QUOTES, 'UTF-8') ?></strong>
       </p>
 
       <?php if (defined('REGISTRATION_DEADLINE_AT') && REGISTRATION_DEADLINE_AT): ?>
@@ -616,16 +662,22 @@ $heroBackgroundUrl = defined('EVENT_HERO_BACKGROUND_URL') && EVENT_HERO_BACKGROU
 
     </div>
 
-    <!-- Lunch & Prize -->
-    <div class="alert mt-4 mb-0 d-flex align-items-start gap-3"
-         style="background:var(--green-light); border:1px solid #9dc4cb; border-radius:.75rem;">
-      <i class="bi bi-award-fill fs-4 mt-1 flex-shrink-0" style="color:var(--green-mid);"></i>
-      <div>
-        <strong class="section-title" style="border-left:none; padding-left:0; font-size:1.05rem;">Dinner &amp; Prize Giving Ceremony</strong>
-        <div class="d-flex flex-column flex-sm-row flex-wrap gap-sm-3 mt-1" style="font-size:.92rem;">
-          <div><i class="bi bi-clock" style="color:var(--green-mid);"></i>&nbsp;  <strong>7:30 PM - 10:00 PM</strong></div>
-          <div><i class="bi bi-geo-alt" style="color:var(--green-mid);"></i>&nbsp; <strong>Crowne Plaza Dhaka Airport</strong></div>
-        </div>
+    <!-- Dinner & Prize Giving -->
+    <div class="alert ceremony-banner mt-4 mb-0">
+      <div class="ceremony-banner__heading">
+        <img
+          src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/recognition.png', ENT_QUOTES, 'UTF-8') ?>"
+          alt=""
+          class="ceremony-banner__icon"
+          width="34"
+          height="34"
+          aria-hidden="true"
+        />
+        <strong class="ceremony-banner__title">Dinner &amp; Prize Giving Ceremony</strong>
+      </div>
+      <div class="ceremony-banner__details">
+        <div><i class="bi bi-clock" style="color:var(--green-mid);"></i>&nbsp; 7:30 PM - 10:00 PM</div>
+        <div><i class="bi bi-geo-alt" style="color:var(--green-mid);"></i>&nbsp; Crowne Plaza Dhaka Airport</div>
       </div>
     </div>
   </div>

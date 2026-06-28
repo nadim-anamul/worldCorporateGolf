@@ -1,8 +1,8 @@
+      <p class="reg-submit-notice text-center text-muted mb-2">
+        <i class="bi bi-shield-lock" aria-hidden="true"></i>
+        Participant contribution will be processed securely via SSLCommerz
+      </p>
       <div class="reg-submit-wrap">
-        <p class="reg-submit-notice text-center text-muted mb-2">
-          <i class="bi bi-shield-lock" aria-hidden="true"></i>
-          Participant contribution will be processed securely via SSLCommerz
-        </p>
         <button type="button" id="submitBtn" class="btn btn-complete-registration reg-submit-btn w-100">
           <span class="reg-submit-btn__label">
             <i class="bi bi-lock-fill" aria-hidden="true"></i>
