@@ -44,10 +44,10 @@ $countdownIdEsc = htmlspecialchars($countdownId, ENT_QUOTES, 'UTF-8');
           <i class="bi bi-lightning-charge-fill early-bird-bar__icon early-bird-bar__icon--animated" aria-hidden="true"></i>
           <strong>Early Bird Offer</strong>
         </div>
-        <div class="early-bird-bar__pricing early-bird-bar__pricing--inline" aria-label="Early bird pricing">
-          <div class="price-stack price-stack--bar-dark price-stack--bar-dark-inline">
-            <span class="price-stack__original"><?= $currency ?> <?= $standardFmt ?></span>
-            <span class="price-stack__offer"><?= $currency ?> <?= $currentFmt ?></span>
+        <div class="early-bird-bar__pricing early-bird-bar__pricing--mobile" aria-label="Early bird pricing">
+          <div class="price-stack price-stack--bar-dark price-stack--bar-dark-mobile">
+            <div class="price-stack__original"><?= $currency ?> <?= $standardFmt ?></div>
+            <div class="price-stack__offer"><?= $currency ?> <?= $currentFmt ?></div>
           </div>
         </div>
       </div>

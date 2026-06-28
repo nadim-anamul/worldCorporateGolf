@@ -88,46 +88,73 @@ try {
       background: var(--green-light);
       border: 1px solid #9dc4cb;
       border-radius: .75rem;
-    }
-    .ceremony-banner__heading {
       display: flex;
       align-items: center;
-      gap: 0.65rem;
-      margin-bottom: 0.35rem;
+      gap: 1rem;
+      padding: 1rem 1.15rem;
     }
     .ceremony-banner__icon {
-      width: 1.5rem;
-      height: 1.5rem;
+      width: 3.5rem;
+      height: 3.5rem;
       object-fit: contain;
       flex-shrink: 0;
       display: block;
+      align-self: center;
       filter: brightness(0) saturate(100%) invert(24%) sepia(35%) saturate(800%) hue-rotate(145deg) brightness(95%) contrast(95%);
+    }
+    .ceremony-banner__body {
+      flex: 1;
+      min-width: 0;
     }
     .ceremony-banner__title {
       color: var(--green-dark);
       font-weight: 700;
       font-size: 1.05rem;
-      line-height: 1.25;
-      margin: 0;
+      line-height: 1.3;
+      margin: 0 0 0.4rem;
+      display: block;
     }
     .ceremony-banner__details {
       display: flex;
       flex-direction: column;
-      gap: 0.25rem;
+      gap: 0.3rem;
       font-size: .92rem;
-      padding-left: calc(2.1rem + 0.65rem);
+      color: #334155;
+    }
+    .ceremony-banner__details i {
+      color: var(--green-mid);
+    }
+    .ceremony-banner__details strong {
+      font-weight: 600;
     }
     @media (max-width: 575.98px) {
+      .ceremony-banner {
+        gap: 0.85rem;
+        padding: 0.9rem 1rem;
+      }
       .ceremony-banner__icon {
-        width: 1.75rem;
-        height: 1.75rem;
+        width: 2.75rem;
+        height: 2.75rem;
       }
       .ceremony-banner__title {
         font-size: 0.98rem;
       }
-      .ceremony-banner__details {
-        padding-left: 0;
-      }
+    }
+
+    .activity-icon-golf {
+      display: inline-block;
+      width: 1.35rem;
+      height: 1.35rem;
+      flex-shrink: 0;
+      background-color: var(--green-mid);
+      -webkit-mask-image: url('<?= htmlspecialchars(APP_BASE_URL . '/assets/images/golf-swing-icon.png', ENT_QUOTES, 'UTF-8') ?>');
+      mask-image: url('<?= htmlspecialchars(APP_BASE_URL . '/assets/images/golf-swing-icon.png', ENT_QUOTES, 'UTF-8') ?>');
+      -webkit-mask-size: contain;
+      mask-size: contain;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+      mask-position: center;
     }
 
     /* ── Schedule cards ─────────────────────────────────────────────────── */
@@ -674,20 +701,20 @@ $heroBackgroundUrl = defined('EVENT_HERO_BACKGROUND_URL') && EVENT_HERO_BACKGROU
 
     <!-- Dinner & Prize Giving -->
     <div class="alert ceremony-banner mt-4 mb-0">
-      <div class="ceremony-banner__heading">
-        <img
-          src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/recognition.png', ENT_QUOTES, 'UTF-8') ?>"
-          alt=""
-          class="ceremony-banner__icon"
-          width="34"
-          height="34"
-          aria-hidden="true"
-        />
+      <img
+        src="<?= htmlspecialchars(APP_BASE_URL . '/assets/images/recognition.png', ENT_QUOTES, 'UTF-8') ?>"
+        alt=""
+        class="ceremony-banner__icon"
+        width="56"
+        height="56"
+        aria-hidden="true"
+      />
+      <div class="ceremony-banner__body">
         <strong class="ceremony-banner__title">Dinner &amp; Prize Giving Ceremony</strong>
-      </div>
-      <div class="ceremony-banner__details">
-        <div><i class="bi bi-clock" style="color:var(--green-mid);"></i>&nbsp; 7:30 PM - 10:00 PM</div>
-        <div><i class="bi bi-geo-alt" style="color:var(--green-mid);"></i>&nbsp; Crowne Plaza Dhaka Airport</div>
+        <div class="ceremony-banner__details">
+          <div><i class="bi bi-clock"></i>&nbsp; <strong>7:30 PM - 10:00 PM</strong></div>
+          <div><i class="bi bi-geo-alt"></i>&nbsp; <strong>Crowne Plaza Dhaka Airport</strong></div>
+        </div>
       </div>
     </div>
   </div>
@@ -700,9 +727,12 @@ $heroBackgroundUrl = defined('EVENT_HERO_BACKGROUND_URL') && EVENT_HERO_BACKGROU
 
       <div class="col-md-6">
         <h2 class="section-title"><i class="bi bi-stars"></i>&nbsp; Activities</h2>
+        <div class="activity-item">
+          <span class="activity-icon-golf" aria-hidden="true"></span>
+          9-Hole Golfing Contest with 108 Top Executives
+        </div>
         <div class="activity-item"><i class="bi bi-people-fill"></i> Networking &amp; Business Connections</div>
         <div class="activity-item"><i class="bi bi-bullseye"></i> Putting Contest</div>
-        <div class="activity-item"><i class="bi bi-flag-fill"></i> 9-Hole Golfing Contest with 108 Top Executives</div>
         <div class="activity-item"><i class="bi bi-bag-heart-fill"></i> Exclusive Goodies</div>
         <div class="activity-item"><i class="bi bi-geo-alt-fill"></i> Driving Range Experience</div>
       </div>
@@ -714,7 +744,7 @@ $heroBackgroundUrl = defined('EVENT_HERO_BACKGROUND_URL') && EVENT_HERO_BACKGROU
           <li>Dress code: Golf Attire</li>
           <li>Participants must bring their own clubs and gear.</li>
           <li>Arrive according to Reporting Times, and at least 30 minutes before tee-off time.</li>
-          <li>Format: Best Ball Scramble; Shotgun Method.</li>
+          <li>Format: Stableford; Shotgun Method.</li>
           <li>Non-golfers may participate in Driving Range &amp; Putting Contest only.</li>
           <li>This is a friendly corporate golf tournament focused on networking and enjoyment. It follows a social format and may not suit highly competitive golfers.</li>
           <li>All participant contributions are strictly non-refundable under any circumstances.</li>

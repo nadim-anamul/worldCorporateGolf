@@ -200,7 +200,7 @@ ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`);
 
 -- First Tournament (Active by default)
 INSERT INTO `tournaments` (`id`, `name`, `date`, `venue`, `format`, `fee`, `currency`, `deadline`, `contact_phone_1`, `contact_phone_2`, `is_active`)
-VALUES (1, '2nd GolfHouse Diplomatic Cup 2026', 'Saturday, 02 May 2026', 'Jolshiri Golf Club, Dhaka', 'Best Ball Scramble (Shotgun Start)', 2000.00, 'BDT', '2026-04-29 23:59:59', '01610 801 081', '01842 324 232', 1)
+VALUES (1, '2nd GolfHouse Diplomatic Cup 2026', 'Saturday, 02 May 2026', 'Jolshiri Golf Club, Dhaka', 'Stableford (Shotgun Start)', 2000.00, 'BDT', '2026-04-29 23:59:59', '01610 801 081', '01842 324 232', 1)
 ON DUPLICATE KEY UPDATE 
     `name` = VALUES(`name`),
     `date` = VALUES(`date`),

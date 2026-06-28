@@ -51,10 +51,9 @@ require_once __DIR__ . '/templates/header.php';
 ?>
 
 <!-- Hero Header -->
-<section class="hero hero-solid py-4">
+<section class="hero hero-solid">
   <div class="container text-center">
-    <h1 class="font-serif text-white h2 mb-1">Golfer Registration</h1>
-    <p class="mb-0 opacity-75" style="font-size: 0.9rem;">Please fill out your tournament details accurately.</p>
+    <h1 class="font-serif text-white h2 mb-0">Golfer Registration</h1>
   </div>
 </section>
 

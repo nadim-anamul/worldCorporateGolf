@@ -536,7 +536,7 @@ if (empty($_SESSION['csrf_token'])) {
 
             <div class="mb-3">
               <label for="format" class="form-label fw-semibold">Game Format <span class="text-danger">*</span></label>
-              <input type="text" class="form-control form-control-sm" id="format" name="format" required placeholder="e.g. Best Ball Scramble (Shotgun Start)" value="<?= esc($editTournament['format'] ?? '') ?>" />
+              <input type="text" class="form-control form-control-sm" id="format" name="format" required placeholder="e.g. Stableford (Shotgun Start)" value="<?= esc($editTournament['format'] ?? '') ?>" />
             </div>
 
             <div class="mb-3">
