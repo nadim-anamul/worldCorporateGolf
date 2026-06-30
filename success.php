@@ -48,7 +48,7 @@ require_once __DIR__ . '/templates/header.php';
   }
 </style>
 
-<section class="hero py-4 page-header">
+<section class="hero hero-solid">
   <div class="container text-center">
     <h1 class="font-serif text-white h2 mb-1">Registration Successful</h1>
     <p class="mb-0 opacity-75" style="font-size: 0.9rem;">Thank you for registering for the tournament.</p>

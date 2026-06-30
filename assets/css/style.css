@@ -56,7 +56,7 @@ h1, h2, h3, h4, h5, h6 {
   background-image: url('../images/registration-hero-bg.png');
   background-position: center top;
   background-size: cover;
-  opacity: 0.42;
+  opacity: 0.9;
   transform: none;
   z-index: 0;
 }
@@ -825,6 +825,12 @@ footer {
   gap: 0.65rem;
   width: 100%;
 }
+.early-bird-bar__mobile .early-bird-bar__icon {
+   font-size: 1.2rem;
+}
+.early-bird-bar__mobile strong {
+    font-size: clamp(0.92rem, 3.8vw, 1.05rem);
+}
 .early-bird-bar__pricing {
   flex-shrink: 0;
   justify-self: end;
@@ -960,10 +966,10 @@ footer {
     align-items: center;
   }
   .early-bird-bar__icon {
-    font-size: 0.95rem;
+    font-size: 1.2rem;
   }
   .early-bird-bar strong {
-    font-size: clamp(0.78rem, 3.2vw, 0.88rem);
+    font-size: clamp(0.92rem, 3.8vw, 1.05rem);
   }
   .early-bird-bar .price-stack--bar-dark-mobile .price-stack__offer {
     animation: early-bird-price-glow 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
