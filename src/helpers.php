@@ -18,6 +18,11 @@ function statusBadge(string $status): string
     };
 }
 
+function currentAppDatetime(): string
+{
+    return date('Y-m-d H:i:s');
+}
+
 function formatAppDatetime(?string $datetime): string
 {
     $datetime = trim((string)$datetime);
