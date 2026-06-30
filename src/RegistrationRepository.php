@@ -106,7 +106,7 @@ class RegistrationRepository
                     profile_photo, name_on_polo, golf_set_brand, contact, email, mailing_address, handicap,
                     tshirt_size, home_club, schedule_group, player_category, reference_name, reference_mission,
                     reference_contact, payment_status, amount, currency, submitted_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
             );
             $stmt->execute([
                 $data['tournament_id'], $data['unique_id'], $data['tran_id'], $data['full_name'],
@@ -115,7 +115,7 @@ class RegistrationRepository
                 $data['email'], $data['mailing_address'], $data['handicap'], $data['tshirt_size'], null,
                 $data['schedule_group'], $data['player_category'], $data['reference_name'] ?: null,
                 $data['reference_mission'] ?: null, $data['reference_contact'] ?: null, 'pending',
-                $data['amount'], $data['currency'], $data['submitted_at'],
+                $data['amount'], $data['currency'],
             ]);
             return;
         }
@@ -126,7 +126,7 @@ class RegistrationRepository
                 profile_photo, name_on_polo, contact, email, mailing_address, tshirt_size, arrival_window,
                 putting_contest_interest, player_category, reference_name, reference_mission, reference_contact,
                 payment_status, amount, currency, submitted_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
         );
         $stmt->execute([
             $data['tournament_id'], $data['unique_id'], $data['tran_id'], $data['full_name'],
@@ -135,7 +135,7 @@ class RegistrationRepository
             $data['mailing_address'], $data['tshirt_size'], $data['arrival_window'],
             $data['putting_contest_interest'], $data['player_category'], $data['reference_name'] ?: null,
             $data['reference_mission'] ?: null, $data['reference_contact'] ?: null, 'pending',
-            $data['amount'], $data['currency'], $data['submitted_at'],
+            $data['amount'], $data['currency'],
         ]);
     }
 

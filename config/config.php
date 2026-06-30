@@ -43,6 +43,9 @@ function _def(string $name, $value): void {
     }
 }
 
+_def('APP_TIMEZONE', 'Asia/Dhaka');
+date_default_timezone_set(APP_TIMEZONE);
+
 // 1. Establish DB Server Constants
 $dbHost = $_env['DB_HOST'] ?? '127.0.0.1';
 $dbPort = $_env['DB_PORT'] ?? '3306';

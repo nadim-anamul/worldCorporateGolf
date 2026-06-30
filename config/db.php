@@ -30,6 +30,7 @@ function db(): PDO
 
     try {
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+        $pdo->exec("SET time_zone = '+06:00'");
     } catch (PDOException $e) {
         error_log('[DB] Connection failed: ' . $e->getMessage());
         throw new RuntimeException('Database connection failed. Please try again later.');

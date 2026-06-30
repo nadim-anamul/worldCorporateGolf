@@ -33,7 +33,7 @@ function exportRow(array $r, int $serial, array $labels): array {
         $r['tshirt_size'] ?? '', $groupId, $label, $r['home_club'] ?? '', $r['handicap'] ?? '', $r['putting_contest_interest'] ?? '',
         $r['profile_photo'] ?? '', $r['name_on_polo'] ?? '', $r['golf_set_brand'] ?? '',
         $r['payment_status'] ?? '', $r['amount'] ?? '', $r['currency'] ?? 'BDT',
-        $r['val_id'] ?? '', $r['submitted_at'] ?? '', $r['paid_at'] ?? ''
+        $r['val_id'] ?? '', formatAppDatetime($r['submitted_at'] ?? ''), formatAppDatetime($r['paid_at'] ?? '')
     ];
 }
 
@@ -344,8 +344,11 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
           </tr>
         </thead>
         <tbody id="regBody">
-        <?php foreach ($registrations as $i => $r): 
-            $detail = json_encode($r, JSON_HEX_QUOT | JSON_HEX_APOS); ?>
+        <?php foreach ($registrations as $i => $r):
+            $detailRow = $r;
+            $detailRow['submitted_at'] = formatAppDatetime($r['submitted_at'] ?? '');
+            $detailRow['paid_at'] = formatAppDatetime($r['paid_at'] ?? '');
+            $detail = json_encode($detailRow, JSON_HEX_QUOT | JSON_HEX_APOS); ?>
             <tr data-status="<?= esc($r['payment_status']) ?>" data-type="<?= esc($r['registration_type']) ?>" data-detail='<?= htmlspecialchars($detail, ENT_QUOTES, 'UTF-8') ?>'>
               <td><?= $i + 1 ?></td>
               <td><?= ($r['registration_type'] ?? '') === 'non_golfer' ? '<span class="badge-type type-non">Non-Golfer</span>' : '<span class="badge-type type-golfer">Golfer</span>' ?></td>
@@ -358,7 +361,7 @@ $failed = count(array_filter($registrations, fn($r) => in_array(($r['payment_sta
               <td><?= esc($scheduleLabels[($r['registration_type'] ?? '') . '_' . ($r['tournament_id'] ?? 1) . '_' . ($r['schedule_group'] ?? '')] ?? $r['schedule_group']) ?></td>
               <td><?= statusBadge((string)$r['payment_status']) ?></td>
               <td><?= $r['amount'] !== '' ? 'BDT ' . number_format((float)$r['amount'], 0) : '—' ?></td>
-              <td><?= esc(substr((string)$r['submitted_at'], 0, 16)) ?></td>
+              <td><?= esc(formatAppDatetime($r['submitted_at'] ?? '')) ?></td>
               <td onclick="event.stopPropagation()">
                 <?php if (($r['payment_status'] ?? '') === 'paid'): ?>
                   <button class="btn-sms send-btn" data-contact="<?= esc($r['contact']) ?>" data-name="<?= esc($r['full_name']) ?>" data-uid="<?= esc($r['unique_id']) ?>" data-type="<?= esc($r['registration_type']) ?>"><i class="bi bi-chat-dots-fill"></i> SMS</button>

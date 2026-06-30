@@ -80,7 +80,6 @@ try {
 
 $uniqueId = bin2hex(random_bytes(16));
 $tranId = 'WCC-' . strtoupper(substr($uniqueId, 0, 24));
-$now = date('Y-m-d H:i:s');
 $amount = (float)CURRENT_FEE;
 $currency = EVENT_CURRENCY;
 
@@ -100,7 +99,7 @@ $slotId = $data['schedule_group'];
 
 try {
     $saveRegistration = function () use (
-        $repo, $regType, $data, $uniqueId, $tranId, $now, $amount, $currency, $relativeWebPath, $slotId
+        $repo, $regType, $data, $uniqueId, $tranId, $amount, $currency, $relativeWebPath, $slotId
     ): void {
         $repo->deleteAbandonedByEmail($regType, $data['email'], ACTIVE_TOURNAMENT_ID);
 
@@ -124,7 +123,6 @@ try {
             'reference_contact' => $data['reference_contact'],
             'amount'        => $amount,
             'currency'      => $currency,
-            'submitted_at'  => $now,
         ];
 
         if ($regType === 'golfer') {

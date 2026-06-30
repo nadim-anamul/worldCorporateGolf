@@ -18,6 +18,21 @@ function statusBadge(string $status): string
     };
 }
 
+function formatAppDatetime(?string $datetime): string
+{
+    $datetime = trim((string)$datetime);
+    if ($datetime === '') {
+        return '—';
+    }
+
+    $ts = strtotime($datetime);
+    if ($ts === false) {
+        return substr($datetime, 0, 16);
+    }
+
+    return date('Y-m-d H:i', $ts);
+}
+
 function formatPlayerCategory(?string $category): string
 {
     $category = trim((string)$category);
