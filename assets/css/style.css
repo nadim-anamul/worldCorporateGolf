@@ -418,6 +418,65 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: var(--hover-shadow);
 }
 
+/* --- Success / receipt page --- */
+.success-page {
+  padding-top: 1.5rem;
+  padding-bottom: 2rem;
+}
+
+.receipt-card {
+  max-width: 680px;
+  border-top: 5px solid var(--gold);
+}
+
+.receipt-details {
+  margin: 0 0 1.5rem;
+}
+
+.receipt-details__row {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, 38%) 1fr;
+  gap: 0.5rem 1rem;
+  align-items: start;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e8edf2;
+}
+
+.receipt-details__row:last-child {
+  border-bottom: none;
+}
+
+.receipt-details__label {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.receipt-details__value {
+  margin: 0;
+  font-weight: 700;
+  color: var(--text-dark);
+  text-align: right;
+  line-height: 1.45;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.receipt-details__value--gold {
+  color: var(--gold-dark);
+}
+
+.receipt-details__value--muted {
+  color: #64748b;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.btn-print-group {
+  flex-wrap: wrap;
+}
+
 .section-title {
   font-size: 1.5rem;
   color: var(--green-dark);
@@ -975,6 +1034,54 @@ footer {
     animation: early-bird-price-glow 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
     transform: none;
     will-change: color, filter;
+  }
+
+  .success-page {
+    padding-top: 0.75rem;
+    padding-bottom: 1.25rem;
+    padding-left: 0.65rem;
+    padding-right: 0.65rem;
+  }
+
+  .receipt-card {
+    padding: 1.1rem 1rem !important;
+    border-radius: 1rem;
+  }
+
+  .receipt-card .bi-patch-check-fill {
+    font-size: 2.5rem !important;
+  }
+
+  .receipt-card .rounded-circle {
+    width: 64px !important;
+    height: 64px !important;
+  }
+
+  .receipt-details__row {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+    padding: 0.65rem 0;
+  }
+
+  .receipt-details__label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .receipt-details__value {
+    text-align: left;
+    font-size: 0.95rem;
+  }
+
+  .btn-print-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-print-group .btn {
+    width: 100%;
   }
 }
 .early-bird-promo--section {
